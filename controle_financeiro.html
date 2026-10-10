@@ -98,6 +98,7 @@
         .tab-3 { background-color: var(--azul-pastel); z-index: 3; }
         .tab-4 { background-color: var(--amarelo-pastel); z-index: 2; }
         .tab-5 { background-color: var(--amarelo-escuro); z-index: 1; }
+        .tab-6 { background-color: #ffbe16; z-index: 0; }
 
         @media (max-width: 768px) {
             .sidebar {
@@ -241,6 +242,7 @@
 
         /* Utilitários Visuais */
         .hide { display: none !important; }
+        .profile-hidden { display: none !important; }
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -386,6 +388,55 @@
             .wishlist-freight-field,
             .wishlist-link-field { grid-column: 1 / -1; grid-row: auto; }
             .wishlist-submit { grid-column: 1 / -1; grid-row: auto; justify-self: end; }
+        }
+        .tracking-form {
+            display: grid;
+            grid-template-columns: 190px minmax(180px, 1fr) minmax(220px, 1.2fr) 72px;
+            align-items: center;
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+        .tracking-image-field {
+            grid-column: 1;
+            grid-row: 1;
+            display: flex;
+            justify-content: center;
+        }
+        .tracking-item-field {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        .tracking-link-field {
+            grid-column: 3;
+            grid-row: 1;
+        }
+        .tracking-submit {
+            grid-column: 4;
+            grid-row: 1;
+            align-self: center;
+            justify-self: start;
+            transform: translateY(16px);
+        }
+        .tracking-submit .btn-action {
+            width: 72px;
+            height: 42px;
+            padding: 4px 10px;
+            background-color: var(--amarelo-pastel);
+            border-color: var(--azul-pastel);
+            font-family: 'Segoe UI Symbol', 'Nirmala UI', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .tracking-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .tracking-image-field {
+                grid-column: 1 / -1;
+                grid-row: auto;
+                justify-content: flex-start;
+            }
+            .tracking-item-field,
+            .tracking-link-field { grid-column: 1 / -1; grid-row: auto; }
+            .tracking-submit { grid-column: 1 / -1; grid-row: auto; justify-self: end; }
         }
 
         main { width: 100%; max-width: none; min-height: calc(100vh - 2rem); display: flex; align-items: center; }
@@ -681,6 +732,7 @@
         <div class="tab tab-3" data-target="tab-fatura" title="Detalhamento Fatura"></div>
         <div class="tab tab-4" data-target="tab-economias" title="Economias"></div>
         <div class="tab tab-5" data-target="tab-wishlist" title="Wishlist"></div>
+        <div class="tab tab-6" data-target="tab-rastreio" data-profile-only="rebecca" title="Rastreio" aria-label="Rastreio"></div>
     </nav>
 
     <main class="flex-1 p-4 md:p-8 md:ml-[100px] w-full overflow-hidden">
@@ -952,6 +1004,48 @@
             </div>
         </section>
 
+        <section id="tab-rastreio" class="tab-content hide fade-in pt-8" data-profile-only="rebecca">
+            <h2 class="font-horizon text-4xl mb-8 text-[var(--azul-escuro)]">RASTREIO ⋆</h2>
+            <form id="form-rastreio" class="tracking-form">
+                <div class="tracking-image-field">
+                    <label for="tracking-image-file" class="wishlist-dropzone" id="tracking-dropzone">
+                        <img src="botão.png" alt="" aria-hidden="true" class="wishlist-drop-decoration drop-shadow-md">
+                        <span class="wishlist-photo-window">
+                            <img id="tracking-image-preview" alt="Prévia da imagem do item" hidden>
+                            <span class="wishlist-drop-prompt" id="tracking-drop-prompt">
+                                <span>+</span>
+                                <span>ARRASTE SUA FOTO</span>
+                            </span>
+                        </span>
+                    </label>
+                    <input type="file" id="tracking-image-file" accept="image/*" class="hide">
+                </div>
+                <div class="wishlist-field tracking-item-field">
+                    <label for="tracking-item" class="font-bebas text-xl">ITEM:</label>
+                    <input type="text" id="tracking-item" required class="input-pastel">
+                </div>
+                <div class="wishlist-field tracking-link-field">
+                    <label for="tracking-link" class="font-bebas text-xl">LINK:</label>
+                    <input type="url" id="tracking-link" required class="input-pastel" placeholder="https://...">
+                </div>
+                <div class="tracking-submit">
+                    <button type="submit" class="font-bebas btn-action" aria-label="Adicionar rastreio" title="Adicionar rastreio">˖ ࣪⊹</button>
+                </div>
+            </form>
+            <div class="tabela-container">
+                <table class="tabela-scrap">
+                    <thead class="font-bebas">
+                        <tr>
+                            <th class="w-32 text-center">-𝜗ৎ-</th><th>ITEM</th><th>LINK</th><th>AÇÃO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-rastreio">
+                        <tr><td colspan="4" class="p-0"><div class="linha-listrada"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
     </main>
 
     <script>
@@ -963,11 +1057,13 @@
             expenses: [], // { id, date, desc, value, category, bank, payTo, type }
             invoices: [], // { id, date, desc, value, installments, invoice, store }
             savings: [],  // { id, date, value, bank }
-            wishlist: []  // { id, date, item, value, link, status, imgUrl }
+            wishlist: [], // { id, date, item, value, link, status, imgUrl }
+            tracking: []  // { id, item, link, imgUrl }
         };
         let wishlistImageData = '';
+        let trackingImageData = '';
 
-        async function compressWishlistImage(file) {
+        async function compressImage(file) {
             if (!file.type.startsWith('image/')) throw new Error('Arquivo não é uma imagem.');
 
             const bitmap = await createImageBitmap(file);
@@ -1018,7 +1114,8 @@
                 expenses: state.expenses,
                 invoices: state.invoices,
                 savings: state.savings,
-                wishlist: state.wishlist
+                wishlist: state.wishlist,
+                tracking: state.profile === 'rebecca' ? state.tracking : []
             };
         }
 
@@ -1029,6 +1126,7 @@
             state.invoices = Array.isArray(profileData.invoices) ? profileData.invoices : [];
             state.savings = Array.isArray(profileData.savings) ? profileData.savings : [];
             state.wishlist = Array.isArray(profileData.wishlist) ? profileData.wishlist : [];
+            state.tracking = profile === 'rebecca' && Array.isArray(profileData.tracking) ? profileData.tracking : [];
         }
 
         function loadState() {
@@ -1266,6 +1364,7 @@
             document.querySelectorAll('.monthly-profile-option').forEach(button => {
                 button.setAttribute('aria-pressed', String(button.dataset.profile === profile));
             });
+            updateProfileOnlyTabs();
             renderExpenseBankOptions();
             renderInvoiceOptions();
             renderEconomyBanks();
@@ -1296,7 +1395,66 @@
             renderInvoices();
             renderSavings();
             renderWishlist();
+            renderTracking();
             calculateAndRenderDashboard(); 
+        }
+
+        function updateProfileOnlyTabs() {
+            document.querySelectorAll('[data-profile-only]').forEach(element => {
+                const isVisible = element.dataset.profileOnly === state.profile;
+                element.classList.toggle('profile-hidden', !isVisible);
+                element.setAttribute('aria-hidden', String(!isVisible));
+            });
+        }
+
+        function renderTracking() {
+            const tbody = document.getElementById('tbody-rastreio');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-0"><div class="linha-listrada"></div></td></tr>';
+
+            state.tracking.forEach(item => {
+                const row = document.createElement('tr');
+                const image = document.createElement('img');
+                image.src = item.imgUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56"%3E%3Crect width="56" height="56" fill="%23eaf0f3"/%3E%3C/svg%3E';
+                image.alt = item.imgUrl ? 'Imagem do pacote' : '';
+                if (!item.imgUrl) image.setAttribute('aria-hidden', 'true');
+
+                const imageCell = document.createElement('td');
+                imageCell.className = 'text-center';
+                const imageFrame = document.createElement('div');
+                imageFrame.className = 'polaroid p-1 w-20 mx-auto transform rotate-[-3deg] pb-4';
+                image.className = 'w-full h-16 object-cover border border-gray-200';
+                imageFrame.appendChild(image);
+                imageCell.appendChild(imageFrame);
+
+                const itemCell = document.createElement('td');
+                itemCell.className = 'font-bebas text-xl';
+                itemCell.textContent = item.item || '';
+
+                const linkCell = document.createElement('td');
+                linkCell.className = 'font-bebas text-lg';
+                const link = document.createElement('a');
+                link.href = item.link;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.className = 'text-blue-300 underline break-all';
+                link.textContent = item.link;
+                linkCell.appendChild(link);
+
+                const actionCell = document.createElement('td');
+                const deleteButton = document.createElement('button');
+                deleteButton.type = 'button';
+                deleteButton.className = 'text-red-500 font-bebas text-xl hover:scale-110 transition';
+                deleteButton.textContent = 'X';
+                deleteButton.setAttribute('aria-label', `Remover rastreio${item.item ? ` de ${item.item}` : ''}`);
+                deleteButton.addEventListener('click', () => {
+                    state.tracking = state.tracking.filter(tracking => tracking.id !== item.id);
+                    saveState();
+                });
+                actionCell.appendChild(deleteButton);
+
+                row.append(imageCell, itemCell, linkCell, actionCell);
+                tbody.appendChild(row);
+            });
         }
 
         function getStripedRow() {
@@ -1492,7 +1650,7 @@
             const loadWishlistImage = async (file) => {
                 if (!file) return;
                 try {
-                    wishlistImageData = await compressWishlistImage(file);
+                    wishlistImageData = await compressImage(file);
                     wishlistImagePreview.src = wishlistImageData;
                     wishlistImagePreview.hidden = false;
                     wishlistDropPrompt.hidden = true;
@@ -1511,6 +1669,49 @@
                 event.preventDefault();
                 wishlistDropzone.classList.remove('is-dragging');
                 loadWishlistImage(event.dataTransfer.files[0]);
+            });
+
+            const trackingImageInput = document.getElementById('tracking-image-file');
+            const trackingDropzone = document.getElementById('tracking-dropzone');
+            const trackingImagePreview = document.getElementById('tracking-image-preview');
+            const trackingDropPrompt = document.getElementById('tracking-drop-prompt');
+            const loadTrackingImage = async (file) => {
+                if (!file) return;
+                try {
+                    trackingImageData = await compressImage(file);
+                    trackingImagePreview.src = trackingImageData;
+                    trackingImagePreview.hidden = false;
+                    trackingDropPrompt.hidden = true;
+                } catch (error) {
+                    alert('Não foi possível carregar essa imagem. Escolha um arquivo de imagem.');
+                }
+            };
+            trackingImageInput.addEventListener('change', () => loadTrackingImage(trackingImageInput.files[0]));
+            trackingDropzone.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                trackingDropzone.classList.add('is-dragging');
+            });
+            trackingDropzone.addEventListener('dragleave', () => trackingDropzone.classList.remove('is-dragging'));
+            trackingDropzone.addEventListener('drop', (event) => {
+                event.preventDefault();
+                trackingDropzone.classList.remove('is-dragging');
+                loadTrackingImage(event.dataTransfer.files[0]);
+            });
+
+            document.getElementById('form-rastreio').addEventListener('submit', (e) => {
+                e.preventDefault();
+                state.tracking.push({
+                    id: generateId(),
+                    item: document.getElementById('tracking-item').value.trim(),
+                    link: document.getElementById('tracking-link').value.trim(),
+                    imgUrl: trackingImageData
+                });
+                saveState();
+                e.target.reset();
+                trackingImageData = '';
+                trackingImagePreview.src = '';
+                trackingImagePreview.hidden = true;
+                trackingDropPrompt.hidden = false;
             });
             
             // Navegação nas Abas
@@ -1608,6 +1809,7 @@
                 wishlistDropPrompt.hidden = false;
             });
 
+            updateProfileOnlyTabs();
             renderAll();
         };
     </script>
