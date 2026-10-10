@@ -1025,9 +1025,7 @@
 
             <div class="tabela-container">
                 <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-                    <div class="invoice-summary font-bebas" aria-live="polite">
-                        <span>TOTAL DA FATURA</span>
-                        <strong id="invoice-total" class="invoice-summary-total" aria-atomic="true">R$ 0,00</strong>
+                    <div id="invoice-totals" class="flex flex-wrap gap-3" aria-live="polite">
                     </div>
                     <div class="flex flex-wrap items-center justify-end gap-3">
                         <label for="invoice-month-filter" class="sr-only">Filtrar compras por mês da fatura</label>
@@ -1874,12 +1872,32 @@
             const selectedMonth = document.getElementById('invoice-month-filter').value;
             const filteredInvoices = state.invoices
                 .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth);
-            const total = filteredInvoices.reduce((sum, item) => (
-                sum + parseFloat(item.value) / parseInt(item.installments)
-            ), 0);
+            const invoiceNames = [...new Set([
+                ...getInvoiceOptions(),
+                ...state.invoices.map(item => item.invoice || 'Sem fatura')
+            ])];
+            const invoiceTotals = document.getElementById('invoice-totals');
+            invoiceTotals.replaceChildren();
+            invoiceNames.forEach(invoice => {
+                const total = filteredInvoices
+                    .filter(item => (item.invoice || 'Sem fatura') === invoice)
+                    .reduce((sum, item) => sum + parseFloat(item.value) / parseInt(item.installments), 0);
+                const summary = document.createElement('div');
+                summary.className = 'invoice-summary font-bebas';
+                summary.setAttribute('aria-atomic', 'true');
+
+                const label = document.createElement('span');
+                label.textContent = `TOTAL ${invoice.toUpperCase()}`;
+
+                const value = document.createElement('strong');
+                value.className = 'invoice-summary-total';
+                value.textContent = formatCurrency(total);
+
+                summary.append(label, value);
+                invoiceTotals.appendChild(summary);
+            });
             const selectAllPaid = document.getElementById('invoice-select-all-paid');
             const paidCount = filteredInvoices.filter(item => item.paid).length;
-            document.getElementById('invoice-total').textContent = formatCurrency(total);
             selectAllPaid.checked = filteredInvoices.length > 0 && paidCount === filteredInvoices.length;
             selectAllPaid.indeterminate = paidCount > 0 && paidCount < filteredInvoices.length;
             selectAllPaid.disabled = filteredInvoices.length === 0;
