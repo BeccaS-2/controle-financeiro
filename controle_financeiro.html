@@ -391,10 +391,44 @@
             max-width: min(100%, 1100px, 130vh);
             min-height: 585px;
             aspect-ratio: 1.48;
+            position: relative;
         }
         @media (max-width: 768px) {
             .monthly-board { aspect-ratio: auto; }
         }
+        .monthly-profile-switch {
+            position: absolute;
+            bottom: 1.25rem;
+            left: 50%;
+            display: inline-flex;
+            gap: 2px;
+            padding: 3px;
+            transform: translateX(-50%);
+            border: 1px solid rgba(90, 74, 66, 0.2);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.72);
+            box-shadow: 2px 2px 0 rgba(90, 74, 66, 0.16);
+            z-index: 10;
+        }
+        .monthly-profile-option {
+            padding: 4px 12px;
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--texto-marrom);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .monthly-profile-option[aria-pressed="true"] {
+            background: var(--amarelo-pastel);
+            color: var(--texto-marrom);
+            box-shadow: 0 1px 3px rgba(90, 74, 66, 0.18);
+        }
+        .bank-name-fallback { display: none; }
+        .bank-logo-missing .bank-name-fallback { display: inline; }
         .mes-label { font-size: 1rem !important; }
         #tab-visao .input-pastel,
         #tab-visao .valor-box {
@@ -407,8 +441,13 @@
             font-size: 1.2rem;
             font-weight: 700;
             letter-spacing: 0.02em;
-            padding-left: 3.25rem;
+            width: 5ch;
+            min-width: 0;
+            padding: 0;
             text-align: left;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
         }
         #tab-visao .input-pastel::placeholder {
             color: var(--texto-marrom);
@@ -418,22 +457,32 @@
             background-color: #f4f8f9;
             border-color: transparent;
         }
+        #tab-visao .input-pastel[readonly] {
+            cursor: default;
+            pointer-events: none;
+        }
         .monthly-currency-input {
-            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+            width: 100%;
+            min-width: 0;
+            padding: 0.5rem 0.75rem;
+            box-sizing: border-box;
+            background-color: #f4f8f9;
+            border-radius: 999px;
         }
         .monthly-currency-input::before {
             content: 'R$';
-            position: absolute;
-            top: 50%;
-            left: 16px;
-            z-index: 1;
-            transform: translateY(-50%);
             color: var(--texto-marrom);
             font-family: 'Poppins', sans-serif;
             font-size: 1.2rem;
             font-weight: 700;
             letter-spacing: 0.02em;
             pointer-events: none;
+            line-height: 1;
+            flex: none;
         }
         .valor-box {
             background-color: var(--amarelo-pastel);
@@ -644,36 +693,44 @@
                         VISÃO MENSAL.
                     </h1>
                     
-                    <div class="grid grid-cols-[64px_1fr_1fr] gap-x-8 gap-y-8 items-center max-w-[520px] mx-auto relative z-10 md:-translate-x-8">
+                    <div class="grid grid-cols-[64px_1fr_1fr_1fr] gap-x-5 gap-y-8 items-center max-w-[760px] mx-auto relative z-10 md:-translate-x-8">
                         <div></div>
                         <div class="text-center font-intro text-[var(--azul-escuro)] text-xl md:text-2xl">ENTRADA</div>
                         <div class="text-center font-intro text-[var(--azul-escuro)] text-xl md:text-2xl">SAÍDA</div>
+                        <div class="text-center font-intro text-[var(--azul-escuro)] text-xl md:text-2xl">EM CONTA</div>
 
                         <!-- OUTUBRO -->
                         <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">OUT</div>
                         <div class="monthly-currency-input">
-                            <input type="text" inputmode="decimal" id="in-out" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" onchange="updateIncome('OUT', this.value)">
+                            <input type="text" inputmode="decimal" id="in-out" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" readonly aria-readonly="true">
                         </div>
                         <div class="valor-box font-gliker" id="out-out">R$ 0,00</div>
+                        <div class="valor-box font-gliker" id="balance-out">R$ 0,00</div>
 
                         <!-- NOVEMBRO -->
                         <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">NOV</div>
                         <div class="monthly-currency-input">
-                            <input type="text" inputmode="decimal" id="in-nov" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" onchange="updateIncome('NOV', this.value)">
+                            <input type="text" inputmode="decimal" id="in-nov" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" readonly aria-readonly="true">
                         </div>
                         <div class="valor-box font-gliker" id="out-nov">R$ 0,00</div>
+                        <div class="valor-box font-gliker" id="balance-nov">R$ 0,00</div>
 
                         <!-- DEZEMBRO -->
                         <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">DEZ</div>
                         <div class="monthly-currency-input">
-                            <input type="text" inputmode="decimal" id="in-dez" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" onchange="updateIncome('DEZ', this.value)">
+                            <input type="text" inputmode="decimal" id="in-dez" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" readonly aria-readonly="true">
                         </div>
                         <div class="valor-box font-gliker" id="out-dez">R$ 0,00</div>
+                        <div class="valor-box font-gliker" id="balance-dez">R$ 0,00</div>
                     </div>
 
                     <!-- Imagem Ano 2026 -->
                     <img src="2026.png" alt="2026" class="absolute bottom-6 right-6 w-24 opacity-80">
                     <img src="botão.png" alt="" class="absolute bottom-[-1rem] left-[-1rem] w-16 z-10 object-contain">
+                    <div class="monthly-profile-switch" role="group" aria-label="Perfil financeiro">
+                        <button type="button" class="monthly-profile-option" data-profile="rebecca" aria-pressed="true">Rebecca</button>
+                        <button type="button" class="monthly-profile-option" data-profile="lenira" aria-pressed="false">Lenira</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -692,10 +749,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <label class="w-24 font-bebas text-xl">BANCO:</label>
-                    <div class="flex gap-2 flex-wrap">
-                        <label class="radio-img-label"><input type="radio" name="g-banco" value="Itaú" required><img src="itau.png" alt="Itaú"></label>
-                        <label class="radio-img-label"><input type="radio" name="g-banco" value="Inter"><img src="banco_inter.png" alt="Inter"></label>
-                        <label class="radio-img-label"><input type="radio" name="g-banco" value="Mercado Pago"><img src="Mercado_pagp.png" alt="Mercado Pago"></label>
+                    <div id="expense-bank-options" class="flex gap-2 flex-wrap">
                     </div>
                 </div>
                 <div class="flex flex-col gap-3">
@@ -762,9 +816,7 @@
                 </div>
                 <div class="flex items-center gap-1">
                     <label class="w-20 font-bebas text-xl">FATURA:</label>
-                    <div class="flex gap-2">
-                        <label class="radio-img-label"><input type="radio" name="f-fatura" value="Itaú" required><img src="itau.png" alt="Itaú"></label>
-                        <label class="radio-img-label px-3 font-bebas text-lg"><input type="radio" name="f-fatura" value="Shopee">Shopee</label>
+                    <div id="invoice-options" class="flex gap-2">
                     </div>
                 </div>
                 <div class="flex items-center gap-1">
@@ -813,9 +865,8 @@
                 <div class="economy-field-row">
                     <span class="economy-field-label">BANCO:</span>
                     <div class="economy-bank-options">
-                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Itaú" required><span>Itaú</span></label>
-                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Inter"><span>Inter</span></label>
-                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Mercado Pago"><span>Mercado Pago</span></label>
+                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Pan" required><img src="pan.png" alt="Pan" class="h-6" onerror="this.hidden=true; this.nextElementSibling.hidden=false"><span hidden>Pan</span></label>
+                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Safra"><img src="safra.png" alt="Safra" class="h-6" onerror="this.hidden=true; this.nextElementSibling.hidden=false"><span hidden>Safra</span></label>
                     </div>
                 </div>
             </form>
@@ -836,16 +887,14 @@
                 <!-- Subtotais por banco -->
                 <div class="economy-bank-totals">
                     <div class="economy-bank-total">
-                        <img src="banco_inter.png" alt="Inter" class="h-8">
-                        <span id="eco-inter">R$ 0,00</span>
+                        <img src="pan.png" alt="Pan" class="h-8" onerror="this.hidden=true; this.nextElementSibling.hidden=false">
+                        <span hidden>Pan</span>
+                        <span id="eco-pan">R$ 0,00</span>
                     </div>
                     <div class="economy-bank-total">
-                        <img src="itau.png" alt="Itaú" class="h-8">
-                        <span id="eco-itau">R$ 0,00</span>
-                    </div>
-                    <div class="economy-bank-total">
-                        <img src="Mercado_pagp.png" alt="Mercado Pago" class="h-8">
-                        <span id="eco-mp">R$ 0,00</span>
+                        <img src="safra.png" alt="Safra" class="h-8" onerror="this.hidden=true; this.nextElementSibling.hidden=false">
+                        <span hidden>Safra</span>
+                        <span id="eco-safra">R$ 0,00</span>
                     </div>
                 </div>
             </div>
@@ -913,6 +962,7 @@
     <script>
         // Estrutura Base de Dados
         let state = {
+            profile: 'rebecca',
             incomes: { 'OUT': 0, 'NOV': 0, 'DEZ': 0 },
             expenses: [], // { id, date, desc, value, category, bank, payTo, type }
             invoices: [], // { id, date, desc, value, installments, invoice, store }
@@ -940,16 +990,14 @@
             return canvas.toDataURL('image/jpeg', 0.78);
         }
 
-        // Regra do Ciclo de Mês: Inicia dia 27 de M-1, termina dia 26 de M.
-        // Ex: 27/10 a 26/11 = Novembro (M).
+        // Rebecca muda de competência no dia 27; Lenira, no dia 10.
         function getCycleMonthLabel(dateString) {
             if(!dateString) return null;
-            const [yearStr, monthStr, dayStr] = dateString.split('-');
+            const [, monthStr, dayStr] = dateString.split('-');
             let month = parseInt(monthStr, 10);
-            let day = parseInt(dayStr, 10);
+            const day = parseInt(dayStr, 10);
             
-            // Se dia >= 27, pertence ao PRÓXIMO mês financeiro.
-            if (day >= 27) {
+            if (day >= (state.profile === 'lenira' ? 10 : 27)) {
                 month = month + 1;
                 if (month > 12) month = 1; 
             }
@@ -971,7 +1019,15 @@
         function loadState() {
             const saved = localStorage.getItem('controleFinanceiroScrapbook');
             if (saved) {
-                state = JSON.parse(saved);
+                const savedState = JSON.parse(saved);
+                state = {
+                    ...state,
+                    ...savedState,
+                    incomes: { ...state.incomes, ...savedState.incomes }
+                };
+                if (state.profile !== 'lenira' && state.profile !== 'rebecca') {
+                    state.profile = 'rebecca';
+                }
                 document.getElementById('in-out').value = formatIncomeInput(state.incomes.OUT);
                 document.getElementById('in-nov').value = formatIncomeInput(state.incomes.NOV);
                 document.getElementById('in-dez').value = formatIncomeInput(state.incomes.DEZ);
@@ -1026,10 +1082,91 @@
             const map = {
                 'Itaú': 'itau.png',
                 'Inter': 'banco_inter.png',
-                'Mercado Pago': 'Mercado_pagp.png'
+                'Mercado Pago': 'Mercado_pagp.png',
+                'Pan': 'pan.png',
+                'Safra': 'safra.png'
             };
-            if(map[bankName]) return `<img src="${map[bankName]}" alt="${bankName}" class="h-6 inline-block">`;
+            if(map[bankName]) {
+                return `<span class="bank-logo-wrapper"><img src="${map[bankName]}" alt="${bankName}" class="h-6 inline-block" onerror="this.hidden=true; this.parentElement.classList.add('bank-logo-missing')"><span class="bank-name-fallback">${bankName}</span></span>`;
+            }
             return bankName;
+        }
+
+        function renderExpenseBankOptions() {
+            const bankOptions = state.profile === 'lenira'
+                ? [
+                    { name: 'Pan', image: 'pan.png' },
+                    { name: 'Safra', image: 'safra.png' }
+                ]
+                : [
+                    { name: 'Itaú', image: 'itau.png' },
+                    { name: 'Inter', image: 'banco_inter.png' },
+                    { name: 'Mercado Pago', image: 'Mercado_pagp.png' }
+                ];
+            const container = document.getElementById('expense-bank-options');
+            container.replaceChildren();
+
+            bankOptions.forEach((bank, index) => {
+                const label = document.createElement('label');
+                label.className = 'radio-img-label';
+
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'g-banco';
+                input.value = bank.name;
+                input.required = index === 0;
+
+                const image = document.createElement('img');
+                image.src = bank.image;
+                image.alt = bank.name;
+                image.addEventListener('error', () => {
+                    image.hidden = true;
+                    label.classList.add('bank-logo-missing');
+                });
+
+                const fallback = document.createElement('span');
+                fallback.className = 'bank-name-fallback';
+                fallback.textContent = bank.name;
+
+                label.append(input, image, fallback);
+                container.appendChild(label);
+            });
+        }
+
+        function renderInvoiceOptions() {
+            const invoiceOptions = state.profile === 'lenira'
+                ? ['Shopee', 'Coin']
+                : ['Itaú', 'Shopee'];
+            const container = document.getElementById('invoice-options');
+            container.replaceChildren();
+
+            invoiceOptions.forEach((invoice, index) => {
+                const label = document.createElement('label');
+                label.className = 'radio-img-label px-3 font-bebas text-lg';
+
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'f-fatura';
+                input.value = invoice;
+                input.required = index === 0;
+
+                label.append(input, document.createTextNode(invoice));
+                container.appendChild(label);
+            });
+        }
+
+        function setFinancialProfile(profile) {
+            if (profile !== 'rebecca' && profile !== 'lenira') {
+                throw new Error(`Perfil financeiro inválido: ${profile}`);
+            }
+
+            state.profile = profile;
+            document.querySelectorAll('.monthly-profile-option').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.profile === profile));
+            });
+            renderExpenseBankOptions();
+            renderInvoiceOptions();
+            saveState();
         }
 
         // --- Ações Principais ---
@@ -1102,8 +1239,15 @@
             // Atualiza UI da Visão Mensal
             ['OUT', 'NOV', 'DEZ'].forEach(m => {
                 const monthInput = document.getElementById(`in-${m.toLowerCase()}`);
-                monthInput.value = formatIncomeInput((Number(state.incomes[m]) || 0) + inTotals[m]);
+                const totalIncome = (Number(state.incomes[m]) || 0) + inTotals[m];
+                const totalBalance = totalIncome - outTotals[m];
+
+                monthInput.value = formatIncomeInput(totalIncome);
                 document.getElementById(`out-${m.toLowerCase()}`).innerText = formatCurrency(outTotals[m]);
+
+                const balanceElement = document.getElementById(`balance-${m.toLowerCase()}`);
+                balanceElement.innerText = formatCurrency(totalBalance);
+                balanceElement.style.color = 'var(--texto-marrom)';
             });
         }
 
@@ -1161,7 +1305,7 @@
         }
 
         function renderSavings() {
-            let totals = { 'Itaú': 0, 'Inter': 0, 'Mercado Pago': 0, total: 0 };
+            let totals = { 'Pan': 0, 'Safra': 0, total: 0 };
             
             state.savings.forEach(item => {
                 const val = parseFloat(item.value);
@@ -1170,9 +1314,8 @@
             });
 
             document.getElementById('eco-total').innerText = formatCurrency(totals.total);
-            document.getElementById('eco-itau').innerText = formatCurrency(totals['Itaú']);
-            document.getElementById('eco-inter').innerText = formatCurrency(totals['Inter']);
-            document.getElementById('eco-mp').innerText = formatCurrency(totals['Mercado Pago']);
+            document.getElementById('eco-pan').innerText = formatCurrency(totals['Pan']);
+            document.getElementById('eco-safra').innerText = formatCurrency(totals['Safra']);
         }
 
         function renderWishlist() {
@@ -1223,6 +1366,12 @@
         // --- Configuração de Abas e Formulários ---
         window.onload = () => {
             loadState();
+            renderExpenseBankOptions();
+            renderInvoiceOptions();
+            document.querySelectorAll('.monthly-profile-option').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.profile === state.profile));
+                button.addEventListener('click', () => setFinancialProfile(button.dataset.profile));
+            });
 
             const wishlistImageInput = document.getElementById('w-img-file');
             const wishlistDropzone = document.getElementById('wishlist-dropzone');
