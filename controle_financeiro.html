@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro - Scrapbook</title>
+    <link rel="icon" type="image/png" href="flor.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* Variáveis de Cores (Paleta Pastel) */
+        :root {
+            --bg-creme: #FDFBF7;
+            --azul-pastel: #BBD2EC;
+            --azul-escuro: #8CA9CE;
+            --amarelo-pastel: #FDEBB3;
+            --amarelo-escuro: #F6D47A;
+            --texto-marrom: #5A4A42;
+            --bg-tabela: #FFFFFF;
+        }
+
+        /* 
+         * Declaração de Fontes Customizadas
+         * Caso as fontes não estejam instaladas na máquina, os fallbacks assumirão.
+         * Para garantir 100% de fidelidade visual, instale Horizon, Intro Rust e Gliker localmente.
+         */
+        @font-face {
+            font-family: 'Horizon';
+            src: local('Horizon'), local('Impact'), sans-serif;
+        }
+        @font-face {
+            font-family: 'Intro Rust';
+            src: local('Intro Rust'), local('Arial Black'), sans-serif;
+        }
+        @font-face {
+            font-family: 'Gliker';
+            src: local('Gliker'), local('Comic Sans MS'), cursive;
+        }
+
+        /* Classes Utilitárias de Fonte */
+        .font-bebas { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+        .font-horizon { font-family: 'Horizon', sans-serif; text-transform: uppercase; }
+        .font-intro { font-family: 'Intro Rust', sans-serif; text-transform: uppercase; }
+        .font-gliker { font-family: 'Patrick Hand', 'Gliker', cursive; }
+        .font-poppins { font-family: 'Poppins', sans-serif; font-weight: 700; }
+
+        body {
+            background-color: var(--bg-creme);
+            color: var(--texto-marrom);
+            background-image: url("fundo.png"), url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+            background-size: cover, auto;
+            background-position: center, center;
+            overflow-x: hidden;
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+        }
+        .tab {
+            width: 72px;
+            height: 100px;
+            border-radius: 0 22px 22px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.08);
+            margin-top: -10px; /* Sobreposição estilo pasta */
+            border: 2px solid rgba(255,255,255,0.5);
+            border-left: none;
+            position: relative;
+            outline: none;
+        }
+        .tab:first-child { margin-top: 0; }
+        .tab:hover { width: 90px; }
+        .tab.active { width: 110px; z-index: 100; border-right: 0; }
+        .tab:focus,
+        .tab:active,
+        .tab:focus-visible {
+            outline: none;
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.08);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .tab-1 { background-color: #FFFFFF; z-index: 5; }
+        .tab-2 { background-color: #9FB9DE; z-index: 4; } /* Azul intermediário */
+        .tab-3 { background-color: var(--azul-pastel); z-index: 3; }
+        .tab-4 { background-color: var(--amarelo-pastel); z-index: 2; }
+        .tab-5 { background-color: var(--amarelo-escuro); z-index: 1; }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: static;
+                transform: none;
+                flex-direction: row;
+                justify-content: center;
+                gap: -5px;
+                padding: 10px;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+            }
+            .tab {
+                width: 75px; height: 52px;
+                border-radius: 15px;
+                margin-top: 0; margin-left: -10px;
+            }
+            .tab:first-child { margin-left: 0; }
+            .tab:hover, .tab.active { width: 75px; transform: translateY(-5px); border-bottom: 4px solid var(--texto-marrom); border-right: none;}
+        }
+
+        .input-pastel {
+            background-color: var(--amarelo-pastel);
+            border-radius: 999px;
+            padding: 8px 16px;
+            color: var(--texto-marrom);
+            border: 2px solid var(--azul-pastel);
+            outline: none;
+            width: 100%;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+        .input-pastel,
+        .valor-box,
+        .valor-box * {
+            color: var(--texto-marrom);
+        }
+        .input-pastel:focus {
+            background-color: #fff;
+            border-color: var(--azul-pastel);
+            box-shadow: none;
+            outline: none;
+        }
+        .tipo-radio {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--texto-marrom);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.15rem;
+            cursor: pointer;
+        }
+        .tipo-radio input {
+            display: grid;
+            place-content: center;
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            appearance: none;
+            border: 2px solid var(--azul-pastel);
+            border-radius: 50%;
+            background-color: var(--amarelo-pastel);
+        }
+        .tipo-radio input::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--azul-escuro);
+            transform: scale(0);
+        }
+        .tipo-radio input:checked::before {
+            transform: scale(1);
+        }
+        .expense-date-field,
+        .expense-value-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .expense-date-field label,
+        .expense-value-field label {
+            flex: 0 0 6rem;
+        }
+        .expense-date-field input,
+        .expense-value-field input {
+            min-width: 0;
+            flex: 1;
+        }
+        #f-data { text-align: left; }
+
+        .btn-action {
+            background-color: #c6d8e4;
+            border-radius: 999px;
+            padding: 8px 24px;
+            font-size: 1.3rem;
+            color: var(--texto-marrom);
+            border: 2px solid #adc4dd;
+            box-shadow: 2px 2px 0px rgba(90, 74, 66, 0.4);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-action:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px var(--texto-marrom); }
+        #form-gasto .btn-action {
+            background-color: var(--amarelo-pastel);
+            border-color: var(--azul-pastel);
+        }
+        #form-fatura .btn-action {
+            background-color: var(--amarelo-pastel);
+            border-color: var(--azul-pastel);
+        }
+
+        .tabela-container {
+            background-color: var(--azul-pastel);
+            padding: 12px;
+            border-radius: 24px;
+            box-shadow: 4px 4px 15px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        .tabela-scrap {
+            width: 100%;
+            background-color: var(--bg-tabela);
+            border-radius: 16px;
+            overflow: hidden;
+            border-collapse: collapse;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+        .tabela-scrap thead { background-color: var(--texto-marrom); color: var(--amarelo-pastel); }
+        .tabela-scrap th { padding: 12px; text-align: left; font-size: 1.2rem; font-family: 'Poppins', sans-serif; font-weight: 700; }
+        .tabela-scrap td { padding: 12px; border-bottom: 2px solid var(--azul-pastel); font-size: 1.1rem; font-family: 'Poppins', sans-serif; font-weight: 700; }
+        .tabela-scrap tr:nth-child(even) { background-color: rgba(253, 235, 179, 0.3); }
+
+        .linha-listrada {
+            height: 12px;
+            width: 100%;
+            background: repeating-linear-gradient(90deg, var(--amarelo-pastel), var(--amarelo-pastel) 40px, var(--azul-pastel) 40px, var(--azul-pastel) 80px);
+        }
+
+        /* Utilitários Visuais */
+        .hide { display: none !important; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Estilo Customizado para Radio Buttons com Imagem */
+        .radio-img-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 2px solid transparent;
+            transition: border 0.2s;
+        }
+        .radio-img-label:has(input:checked) {
+            border-color: var(--texto-marrom);
+            background-color: var(--amarelo-pastel);
+        }
+        .radio-img-label input { display: none; }
+        .radio-img-label img { height: 24px; object-fit: contain; }
+        
+        .polaroid {
+            background: white; padding: 10px 10px 30px 10px; box-shadow: 3px 3px 12px rgba(0,0,0,0.15); border: 1px solid #eee; position: relative;
+        }
+        .wishlist-form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            align-items: end;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .wishlist-field {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .wishlist-image-field {
+            grid-column: 4;
+            grid-row: 1 / span 2;
+            display: flex;
+            justify-content: center;
+        }
+        .wishlist-dropzone {
+            position: relative;
+            display: flex;
+            width: 172px;
+            min-height: 210px;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 12px 12px 22px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            box-shadow: 3px 3px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transform: rotate(-2deg);
+            transition: transform 0.2s, box-shadow 0.2s, outline-color 0.2s;
+        }
+        .wishlist-drop-decoration {
+            position: absolute;
+            top: -18px;
+            right: -18px;
+            z-index: 2;
+            width: 48px;
+            pointer-events: none;
+        }
+        .wishlist-dropzone:hover,
+        .wishlist-dropzone.is-dragging {
+            outline: 2px dashed var(--azul-escuro);
+            outline-offset: 4px;
+            transform: rotate(0deg) translateY(-3px);
+        }
+        .wishlist-photo-window {
+            display: flex;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid #d9e2e8;
+            background: #eaf0f3;
+        }
+        .wishlist-photo-window img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .wishlist-photo-window img[hidden],
+        .wishlist-drop-prompt[hidden] { display: none; }
+        .wishlist-drop-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            color: var(--azul-escuro);
+            text-align: center;
+        }
+        .wishlist-drop-prompt span:first-child {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+        .wishlist-drop-prompt span:last-child {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+        }
+        .wishlist-link-field {
+            grid-column: 1 / span 2;
+            grid-row: 2;
+        }
+        .wishlist-submit {
+            grid-column: 3;
+            grid-row: 2;
+            align-self: end;
+            justify-self: start;
+        }
+        .wishlist-submit .btn-action {
+            position: relative;
+            top: -4px;
+            width: 72px;
+            height: 42px;
+            padding: 4px 10px;
+            background-color: var(--amarelo-pastel);
+            border-color: var(--azul-pastel);
+            font-family: 'Segoe UI Symbol', 'Nirmala UI', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .wishlist-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .wishlist-image-field {
+                grid-column: 1 / -1;
+                grid-row: auto;
+                justify-content: flex-start;
+            }
+            .wishlist-link-field { grid-column: 1 / -1; grid-row: auto; }
+            .wishlist-submit { grid-column: 1 / -1; grid-row: auto; justify-self: end; }
+        }
+
+        main { width: 100%; max-width: none; min-height: calc(100vh - 2rem); display: flex; align-items: center; }
+        .tab-content { width: 100%; }
+        #tab-visao { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 6rem); }
+        .monthly-board {
+            width: 100%;
+            max-width: min(100%, 1100px, 130vh);
+            min-height: 585px;
+            aspect-ratio: 1.48;
+        }
+        @media (max-width: 768px) {
+            .monthly-board { aspect-ratio: auto; }
+        }
+        .mes-label { font-size: 1rem !important; }
+        #tab-visao .input-pastel,
+        #tab-visao .valor-box {
+            background-color: #f4f8f9;
+            border-color: transparent;
+        }
+        #tab-visao .input-pastel {
+            color: var(--texto-marrom);
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            padding-left: 3.25rem;
+            text-align: left;
+        }
+        #tab-visao .input-pastel::placeholder {
+            color: var(--texto-marrom);
+            opacity: 1;
+        }
+        #tab-visao .input-pastel:focus {
+            background-color: #f4f8f9;
+            border-color: transparent;
+        }
+        .monthly-currency-input {
+            position: relative;
+        }
+        .monthly-currency-input::before {
+            content: 'R$';
+            position: absolute;
+            top: 50%;
+            left: 16px;
+            z-index: 1;
+            transform: translateY(-50%);
+            color: var(--texto-marrom);
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            pointer-events: none;
+        }
+        .valor-box {
+            background-color: var(--amarelo-pastel);
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: 0.02em;
+            color: var(--texto-marrom);
+            border: 2px solid var(--azul-pastel);
+            box-shadow: none;
+        }
+        .valor-box,
+        #out-out,
+        #out-nov,
+        #out-dez {
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.02em;
+            color: var(--texto-marrom);
+        }
+        #tab-economias {
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+        .economy-heading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .economy-heading h2 {
+            margin: 0;
+            color: var(--azul-escuro);
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        .economy-heading .economy-sparkle {
+            color: var(--azul-escuro);
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+        #form-economia {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 14px;
+            width: fit-content;
+            margin: 0 0 28px;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+        .economy-field-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .economy-field-label {
+            min-width: 48px;
+            color: var(--texto-marrom);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.25rem;
+        }
+        #e-valor {
+            width: 180px;
+            height: 42px;
+            padding: 6px 14px;
+        }
+        .economy-bank-options {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        .economy-bank-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--texto-marrom);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .economy-bank-option input {
+            display: grid;
+            place-content: center;
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            appearance: none;
+            border: 2px solid var(--azul-pastel);
+            border-radius: 50%;
+            background: var(--amarelo-pastel);
+        }
+        .economy-bank-option input::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--azul-escuro);
+            transform: scale(0);
+        }
+        .economy-bank-option input:checked::before {
+            transform: scale(1);
+        }
+        #eco-total {
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+        #form-economia .btn-action {
+            align-self: center;
+            margin: 0;
+            min-width: 48px;
+            height: 42px;
+            padding: 4px 10px;
+            background-color: var(--amarelo-pastel);
+            border-color: var(--azul-pastel);
+            font-size: 1.1rem;
+        }
+        .economy-dashboard {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.9fr);
+            align-items: center;
+            gap: 32px;
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto;
+        }
+        .economy-camera {
+            width: 100%;
+            max-width: 460px;
+            justify-self: center;
+        }
+        .economy-bank-totals {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+        }
+        .economy-bank-total {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            min-height: 96px;
+            width: 100%;
+            padding: 14px 22px;
+            border: 6px solid var(--azul-pastel);
+            border-radius: 30px;
+            background: var(--amarelo-pastel);
+        }
+        .economy-bank-total img {
+            width: 78px;
+            max-height: 42px;
+            object-fit: contain;
+        }
+        .economy-bank-total span {
+            color: var(--texto-marrom);
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        @media (max-width: 768px) {
+            #tab-economias { padding-top: 1rem; }
+            #form-economia { width: 100%; }
+            .economy-dashboard {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .economy-camera { max-width: 360px; }
+            .economy-bank-totals { max-width: 360px; margin: 0 auto; }
+            .economy-bank-total { min-height: 78px; border-width: 4px; }
+            .economy-bank-total span { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row min-h-screen">
+
+    <nav class="sidebar">
+        <div class="tab tab-1 active" data-target="tab-visao" title="Visão Mensal"></div>
+        <div class="tab tab-2" data-target="tab-gastos" title="Controle de Gastos"></div>
+        <div class="tab tab-3" data-target="tab-fatura" title="Detalhamento Fatura"></div>
+        <div class="tab tab-4" data-target="tab-economias" title="Economias"></div>
+        <div class="tab tab-5" data-target="tab-wishlist" title="Wishlist"></div>
+    </nav>
+
+    <main class="flex-1 p-4 md:p-8 md:ml-[100px] w-full overflow-hidden">
+        
+        <section id="tab-visao" class="tab-content fade-in">
+            <div class="flex justify-center items-center mt-12 mb-8 w-full">
+                <!-- Fundo Visão Mensal -->
+                 <div class="monthly-board relative p-8 md:p-12 rounded-[30px] mx-auto" 
+                     style="background-image: url('fundo_visão_mensal.png'); background-size: 100% 100%; background-position: center; background-repeat: no-repeat;">
+                    
+                    <!-- Clip Archive -->
+                    <img src="clip.png" alt="Archive" class="absolute -top-20 right-4 w-28 z-10 drop-shadow-md object-contain">
+
+                    <h1 class="font-horizon text-4xl md:text-5xl mb-12 text-center text-[var(--texto-marrom)] tracking-wider">
+                        VISÃO MENSAL.
+                    </h1>
+                    
+                    <div class="grid grid-cols-[64px_1fr_1fr] gap-x-8 gap-y-8 items-center max-w-[520px] mx-auto relative z-10 md:-translate-x-8">
+                        <div></div>
+                        <div class="text-center font-intro text-[var(--azul-escuro)] text-xl md:text-2xl">ENTRADA</div>
+                        <div class="text-center font-intro text-[var(--azul-escuro)] text-xl md:text-2xl">SAÍDA</div>
+
+                        <!-- OUTUBRO -->
+                        <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">OUT</div>
+                        <div class="monthly-currency-input">
+                            <input type="text" inputmode="decimal" id="in-out" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" onchange="updateIncome('OUT', this.value)">
+                        </div>
+                        <div class="valor-box font-gliker" id="out-out">R$ 0,00</div>
+
+                        <!-- NOVEMBRO -->
+                        <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">NOV</div>
+                        <div class="monthly-currency-input">
+                            <input type="text" inputmode="decimal" id="in-nov" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" onchange="updateIncome('NOV', this.value)">
+                        </div>
+                        <div class="valor-box font-gliker" id="out-nov">R$ 0,00</div>
+
+                        <!-- DEZEMBRO -->
+                        <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">DEZ</div>
+                        <div class="monthly-currency-input">
+                            <input type="text" inputmode="decimal" id="in-dez" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" onchange="updateIncome('DEZ', this.value)">
+                        </div>
+                        <div class="valor-box font-gliker" id="out-dez">R$ 0,00</div>
+                    </div>
+
+                    <!-- Imagem Ano 2026 -->
+                    <img src="2026.png" alt="2026" class="absolute bottom-6 right-6 w-24 opacity-80">
+                    <img src="botão.png" alt="" class="absolute bottom-[-1rem] left-[-1rem] w-16 z-10 object-contain">
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-gastos" class="tab-content hide fade-in pt-8">
+            <h2 class="font-horizon text-4xl mb-8 text-[var(--azul-escuro)]">CONTROLE DE GASTOS 𝜗ৎ</h2>
+            
+            <form id="form-gasto" class="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6">
+                <div class="expense-date-field">
+                    <label class="w-24 font-bebas text-xl">DATA:</label>
+                    <input type="text" id="g-data" required inputmode="numeric" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" placeholder="dd/mm/aaaa" class="input-pastel">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="w-24 font-bebas text-xl">DESCRIÇÃO:</label>
+                    <input type="text" id="g-desc" required class="input-pastel">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="w-24 font-bebas text-xl">BANCO:</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <label class="radio-img-label"><input type="radio" name="g-banco" value="Itaú" required><img src="itau.png" alt="Itaú"></label>
+                        <label class="radio-img-label"><input type="radio" name="g-banco" value="Inter"><img src="banco_inter.png" alt="Inter"></label>
+                        <label class="radio-img-label"><input type="radio" name="g-banco" value="Mercado Pago"><img src="Mercado_pagp.png" alt="Mercado Pago"></label>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div class="expense-value-field">
+                        <label class="w-24 font-bebas text-xl">VALOR:</label>
+                        <input type="number" step="0.01" id="g-valor" required class="input-pastel font-gliker">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-24 font-bebas text-xl">TIPO:</span>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <label class="tipo-radio"><input type="radio" name="g-tipo" value="Entrada" required><span>Entrada</span></label>
+                            <label class="tipo-radio"><input type="radio" name="g-tipo" value="Saída" checked><span>Saída</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 lg:col-span-2 lg:self-start">
+                    <label class="w-24 font-bebas text-xl leading-tight">PAGAR PARA:</label>
+                    <select id="g-pagar" class="input-pastel">
+                        <option value=""> </option>
+                        <option value="edysampa42@gmail.com">edysampa42@gmail.com</option>
+                        <option value="casanossafe@gmail.com">casanossafe@gmail.com</option>
+                        <option value="millymoraes02@gmail.com">millymoraes02@gmail.com</option>
+                        <option value="11949196756">Cabeleleira = 11949196756</option>
+                        <option value="52227219000121">Manicure = 52227219000121</option>
+                    </select>
+                </div>
+                <div class="lg:col-span-3 flex justify-end -mt-2">
+                    <button type="submit" class="font-bebas btn-action">.✦ ݁˖</button>
+                </div>
+            </form>
+
+            <div class="tabela-container">
+                <!-- Laço Decorativo -->
+                <img src="laço.png" alt="Laço" class="absolute -top-6 -right-6 w-24 drop-shadow-md z-10">
+                
+                <table class="tabela-scrap">
+                    <thead class="font-bebas">
+                        <tr>
+                            <th>DATA</th><th>DESCRIÇÃO</th><th>VALOR</th><th>BANCO</th><th>PAGAR PARA</th><th>TIPO</th><th>AÇÃO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-gastos">
+                        <tr><td colspan="7" class="p-0"><div class="linha-listrada"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="tab-fatura" class="tab-content hide fade-in pt-8">
+            <div class="flex justify-between items-center mb-8 relative">
+                <h2 class="font-horizon text-4xl text-[var(--azul-escuro)]">DETALHAMENTO FATURA ࣪⊹</h2>
+                <!-- Botões Decorativos 2 -->
+                <img src="botões.png" alt="Botões" class="w-20 absolute -right-4 -top-6 drop-shadow-md">
+            </div>
+
+            <form id="form-fatura" class="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
+                <div class="flex items-center gap-1">
+                    <label class="w-16 font-bebas text-xl">DATA:</label>
+                    <input type="text" id="f-data" required inputmode="numeric" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" placeholder="dd/mm/aaaa" class="input-pastel">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label class="w-20 font-bebas text-xl">DESCRIÇÃO:</label>
+                    <input type="text" id="f-desc" required class="input-pastel">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label class="w-20 font-bebas text-xl">FATURA:</label>
+                    <div class="flex gap-2">
+                        <label class="radio-img-label"><input type="radio" name="f-fatura" value="Itaú" required><img src="itau.png" alt="Itaú"></label>
+                        <label class="radio-img-label px-3 font-bebas text-lg"><input type="radio" name="f-fatura" value="Shopee">Shopee</label>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <label class="w-20 whitespace-nowrap font-bebas text-base">VALOR:</label>
+                    <input type="number" step="0.01" id="f-valor" required class="input-pastel font-gliker">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label class="w-20 font-bebas text-xl">PARCELAS:</label>
+                    <input type="number" min="1" id="f-parcelas" required class="input-pastel font-gliker" placeholder="Ex: 12">
+                </div>
+                <div class="flex items-center gap-1">
+                    <label class="w-20 font-bebas text-xl">LOJA:</label>
+                    <input type="text" id="f-loja" class="input-pastel">
+                </div>
+                      <div class="lg:col-span-3 flex justify-end -mt-2">
+                          <button type="submit" class="font-bebas btn-action">.✦ ݁˖</button>
+                </div>
+            </form>
+
+            <div class="tabela-container">
+                <table class="tabela-scrap">
+                    <thead class="font-bebas">
+                        <tr>
+                            <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th>FATURA</th><th>LOJA</th><th>AÇÃO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-fatura">
+                        <tr><td colspan="7" class="p-0"><div class="linha-listrada"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="tab-economias" class="tab-content hide fade-in pt-8">
+            <div class="economy-heading">
+                <span class="economy-sparkle" aria-hidden="true">✦</span>
+                <h2>ECONOMIAS</h2>
+            </div>
+
+            <form id="form-economia">
+                <div class="economy-field-row">
+                    <label for="e-valor" class="economy-field-label">VALOR:</label>
+                    <input type="number" step="0.01" id="e-valor" required class="input-pastel font-gliker" title="Valores negativos representam retiradas da economia.">
+                    <button type="submit" class="font-bebas btn-action" aria-label="Guardar Valor" title="Guardar Valor">୨ৎ</button>
+                </div>
+                <div class="economy-field-row">
+                    <span class="economy-field-label">BANCO:</span>
+                    <div class="economy-bank-options">
+                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Itaú" required><span>Itaú</span></label>
+                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Inter"><span>Inter</span></label>
+                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Mercado Pago"><span>Mercado Pago</span></label>
+                    </div>
+                </div>
+            </form>
+
+            <div class="economy-dashboard">
+                
+                <!-- Câmera com overlay de total -->
+                <div class="economy-camera relative inline-block">
+                    <img src="camera.png" alt="Câmera Fotográfica" class="w-full drop-shadow-xl">
+                    <!-- Área da tela da câmera baseada na imagem de referência -->
+                    <div class="absolute top-[28%] left-[12%] w-[55%] h-[50%] flex items-center justify-center">
+                        <div class="text-center transform rotate-[-5deg]">
+                            <div id="eco-total" class="font-gliker text-3xl text-[var(--texto-marrom)]" style="text-shadow: 1px 1px 0px rgba(255,255,255,0.8);">R$ 0,00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subtotais por banco -->
+                <div class="economy-bank-totals">
+                    <div class="economy-bank-total">
+                        <img src="banco_inter.png" alt="Inter" class="h-8">
+                        <span id="eco-inter">R$ 0,00</span>
+                    </div>
+                    <div class="economy-bank-total">
+                        <img src="itau.png" alt="Itaú" class="h-8">
+                        <span id="eco-itau">R$ 0,00</span>
+                    </div>
+                    <div class="economy-bank-total">
+                        <img src="Mercado_pagp.png" alt="Mercado Pago" class="h-8">
+                        <span id="eco-mp">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-wishlist" class="tab-content hide fade-in pt-8">
+            <div class="flex items-center gap-3 mb-8">
+                <h2 class="font-horizon text-4xl text-[var(--azul-escuro)]">WISH LIST ⋆˚꩜｡</h2>
+            </div>
+
+            <form id="form-wishlist" class="wishlist-form-grid">
+                <div class="wishlist-field">
+                    <label class="font-bebas text-xl">ITEM:</label>
+                    <input type="text" id="w-item" required class="input-pastel">
+                </div>
+                <div class="wishlist-field">
+                    <label class="font-bebas text-xl">VALOR:</label>
+                    <input type="number" step="0.01" id="w-valor" required class="input-pastel font-gliker">
+                </div>
+                <div class="wishlist-field">
+                    <label class="font-bebas text-xl">STATUS:</label>
+                    <select id="w-cat" class="input-pastel">
+                        <option value="Planejando">Planejando</option>
+                        <option value="Comprado">Comprado</option>
+                    </select>
+                </div>
+                <div class="wishlist-image-field">
+                    <label for="w-img-file" class="wishlist-dropzone" id="wishlist-dropzone">
+                        <img src="botão.png" alt="" aria-hidden="true" class="wishlist-drop-decoration drop-shadow-md">
+                        <span class="wishlist-photo-window">
+                            <img id="wishlist-image-preview" alt="Prévia da imagem selecionada" hidden>
+                            <span class="wishlist-drop-prompt" id="wishlist-drop-prompt">
+                                <span>+</span>
+                                <span>ARRASTE SUA FOTO</span>
+                            </span>
+                        </span>
+                    </label>
+                    <input type="file" id="w-img-file" accept="image/*" class="hide">
+                </div>
+                <div class="wishlist-field wishlist-link-field">
+                    <label class="font-bebas text-xl">LINK DA LOJA:</label>
+                    <input type="url" id="w-link" class="input-pastel" placeholder="https://...">
+                </div>
+                <div class="wishlist-submit">
+                    <button type="submit" class="font-bebas btn-action" aria-label="Adicionar item à Wishlist" title="Adicionar item à Wishlist">˖ ࣪⊹</button>
+                </div>
+            </form>
+
+            <div class="tabela-container">
+                <table class="tabela-scrap">
+                    <thead class="font-bebas">
+                        <tr>
+                            <th class="w-32 text-center">-𝜗ৎ-</th><th>ITEM</th><th>VALOR</th><th>LINK</th><th>STATUS</th><th>AÇÃO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-wishlist">
+                         <tr><td colspan="6" class="p-0"><div class="linha-listrada"></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Estrutura Base de Dados
+        let state = {
+            incomes: { 'OUT': 0, 'NOV': 0, 'DEZ': 0 },
+            expenses: [], // { id, date, desc, value, category, bank, payTo, type }
+            invoices: [], // { id, date, desc, value, installments, invoice, store }
+            savings: [],  // { id, date, value, bank }
+            wishlist: []  // { id, date, item, value, link, status, imgUrl }
+        };
+        let wishlistImageData = '';
+
+        async function compressWishlistImage(file) {
+            if (!file.type.startsWith('image/')) throw new Error('Arquivo não é uma imagem.');
+
+            const bitmap = await createImageBitmap(file);
+            const maxDimension = 900;
+            const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(bitmap.width * scale);
+            canvas.height = Math.round(bitmap.height * scale);
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error('Não foi possível processar a imagem.');
+
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            bitmap.close();
+            return canvas.toDataURL('image/jpeg', 0.78);
+        }
+
+        // Regra do Ciclo de Mês: Inicia dia 27 de M-1, termina dia 26 de M.
+        // Ex: 27/10 a 26/11 = Novembro (M).
+        function getCycleMonthLabel(dateString) {
+            if(!dateString) return null;
+            const [yearStr, monthStr, dayStr] = dateString.split('-');
+            let month = parseInt(monthStr, 10);
+            let day = parseInt(dayStr, 10);
+            
+            // Se dia >= 27, pertence ao PRÓXIMO mês financeiro.
+            if (day >= 27) {
+                month = month + 1;
+                if (month > 12) month = 1; 
+            }
+            
+            // Mapeamento (10 = OUT, 11 = NOV, 12 = DEZ)
+            const map = { 10: 'OUT', 11: 'NOV', 12: 'DEZ' };
+            return map[month] || null; // Ignora se não for out/nov/dez para este MVP específico
+        }
+
+        // --- Persistência de Dados (localStorage) ---
+        function formatIncomeInput(value) {
+            if (value === '' || value === null || value === undefined) return '';
+            return Number(value).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('controleFinanceiroScrapbook');
+            if (saved) {
+                state = JSON.parse(saved);
+                document.getElementById('in-out').value = formatIncomeInput(state.incomes.OUT);
+                document.getElementById('in-nov').value = formatIncomeInput(state.incomes.NOV);
+                document.getElementById('in-dez').value = formatIncomeInput(state.incomes.DEZ);
+            }
+        }
+        
+        function saveState() {
+            localStorage.setItem('controleFinanceiroScrapbook', JSON.stringify(state));
+            renderAll();
+        }
+
+        // --- Helpers de Formatação ---
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+        }
+
+        function parseDateBR(dateString) {
+            const match = /^([0-9]{2})\/([0-9]{2})\/([0-9]{4})$/.exec(String(dateString).trim());
+            if (!match) return '';
+
+            const [, day, month, year] = match;
+            const parsedDate = new Date(Number(year), Number(month) - 1, Number(day));
+            if (parsedDate.getFullYear() !== Number(year) || parsedDate.getMonth() !== Number(month) - 1 || parsedDate.getDate() !== Number(day)) {
+                return '';
+            }
+
+            return `${year}-${month}-${day}`;
+        }
+
+        function applyBrazilianDateMask(input) {
+            input.addEventListener('input', () => {
+                const digits = input.value.replace(/\D/g, '').slice(0, 8);
+                if (digits.length > 4) {
+                    input.value = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+                } else if (digits.length > 2) {
+                    input.value = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                } else {
+                    input.value = digits;
+                }
+            });
+        }
+        
+        function formatDateBR(dateStr) {
+            if(!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+        
+        function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+        function getBankLogoHTML(bankName) {
+            const map = {
+                'Itaú': 'itau.png',
+                'Inter': 'banco_inter.png',
+                'Mercado Pago': 'Mercado_pagp.png'
+            };
+            if(map[bankName]) return `<img src="${map[bankName]}" alt="${bankName}" class="h-6 inline-block">`;
+            return bankName;
+        }
+
+        // --- Ações Principais ---
+        function updateIncome(month, value) {
+            const normalizedValue = String(value).trim().replace(/\.(?=.*[,])/g, '').replace(',', '.');
+            const enteredTotal = parseFloat(normalizedValue) || 0;
+            const recordedEntries = state.expenses.reduce((total, item) => {
+                return item.type === 'Entrada' && getCycleMonthLabel(item.date) === month
+                    ? total + (parseFloat(item.value) || 0)
+                    : total;
+            }, 0);
+            state.incomes[month] = Math.max(0, enteredTotal - recordedEntries);
+            saveState();
+        }
+
+        function deleteItem(collection, id) {
+            state[collection] = state[collection].filter(item => item.id !== id);
+            saveState();
+        }
+
+        // --- Lógica de Renderização ---
+        function renderAll() {
+            renderExpenses();
+            renderInvoices();
+            renderSavings();
+            renderWishlist();
+            calculateAndRenderDashboard(); 
+        }
+
+        function getStripedRow() {
+            return `<tr><td colspan="10" class="p-0"><div class="linha-listrada"></div></td></tr>`;
+        }
+
+        function calculateAndRenderDashboard() {
+            let inTotals = { 'OUT': 0, 'NOV': 0, 'DEZ': 0 };
+            let outTotals = { 'OUT': 0, 'NOV': 0, 'DEZ': 0 };
+
+            // Classifica lançamentos da Aba 2 por entrada ou saída
+            state.expenses.forEach(ex => {
+                const monthLabel = getCycleMonthLabel(ex.date);
+                if (monthLabel && outTotals[monthLabel] !== undefined) {
+                    const total = ex.type === 'Entrada' ? inTotals : outTotals;
+                    total[monthLabel] += parseFloat(ex.value) || 0;
+                }
+            });
+
+            // Soma Economias (Aba 4)
+            state.savings.forEach(sv => {
+                const monthLabel = getCycleMonthLabel(sv.date);
+                if (monthLabel && outTotals[monthLabel] !== undefined) {
+                    const savingsValue = parseFloat(sv.value) || 0;
+                    if (savingsValue < 0) {
+                        inTotals[monthLabel] += Math.abs(savingsValue);
+                    } else {
+                        outTotals[monthLabel] += savingsValue;
+                    }
+                }
+            });
+
+            // Soma Wishlist Comprados (Aba 5)
+            state.wishlist.forEach(wl => {
+                if (wl.status === 'Comprado' && wl.date) {
+                    const monthLabel = getCycleMonthLabel(wl.date);
+                    if (monthLabel && outTotals[monthLabel] !== undefined) {
+                        outTotals[monthLabel] += parseFloat(wl.value);
+                    }
+                }
+            });
+
+            // Atualiza UI da Visão Mensal
+            ['OUT', 'NOV', 'DEZ'].forEach(m => {
+                const monthInput = document.getElementById(`in-${m.toLowerCase()}`);
+                monthInput.value = formatIncomeInput((Number(state.incomes[m]) || 0) + inTotals[m]);
+                document.getElementById(`out-${m.toLowerCase()}`).innerText = formatCurrency(outTotals[m]);
+            });
+        }
+
+        function renderExpenses() {
+            const tbody = document.getElementById('tbody-gastos');
+            tbody.innerHTML = getStripedRow();
+            
+            const sorted = [...state.expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            sorted.forEach(item => {
+                const transactionType = item.type === 'Entrada' ? 'Entrada' : 'Saída';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-bebas text-lg">${formatDateBR(item.date)}</td>
+                    <td class="font-bebas text-lg">${item.desc}</td>
+                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(item.value)}</td>
+                    <td>${getBankLogoHTML(item.bank)}</td>
+                    <td class="font-bebas text-lg">${item.payTo}</td>
+                    <td class="font-bebas text-lg text-[var(--texto-marrom)]">${transactionType}</td>
+                    <td><button onclick="deleteItem('expenses', '${item.id}')" class="text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition">X</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderInvoices() {
+            const tbody = document.getElementById('tbody-fatura');
+            tbody.innerHTML = getStripedRow();
+            
+            const now = new Date();
+            
+            state.invoices.forEach(item => {
+                const valParcela = parseFloat(item.value) / parseInt(item.installments);
+                
+                // Lógica simples para identificar a parcela atual (baseado no mês da compra)
+                const purchDate = new Date(item.date + 'T12:00:00');
+                const monthsDiff = (now.getFullYear() - purchDate.getFullYear()) * 12 + (now.getMonth() - purchDate.getMonth());
+                let instText = `${monthsDiff + 1} / ${item.installments}`;
+                
+                if (monthsDiff + 1 > item.installments) instText = "Finalizado";
+                else if (monthsDiff < 0) instText = "Futuro";
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="font-bebas text-lg text-center">${formatDateBR(item.date)}</td>
+                    <td class="font-bebas text-lg">${item.desc}</td>
+                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}</td>
+                    <td class="font-bebas text-lg">${instText}</td>
+                    <td>${getBankLogoHTML(item.invoice) || item.invoice}</td>
+                    <td class="font-bebas text-lg">${item.store}</td>
+                    <td><button onclick="deleteItem('invoices', '${item.id}')" class="text-red-500 font-bebas text-xl hover:scale-110 transition">X</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderSavings() {
+            let totals = { 'Itaú': 0, 'Inter': 0, 'Mercado Pago': 0, total: 0 };
+            
+            state.savings.forEach(item => {
+                const val = parseFloat(item.value);
+                if (totals[item.bank] !== undefined) totals[item.bank] += val;
+                totals.total += val;
+            });
+
+            document.getElementById('eco-total').innerText = formatCurrency(totals.total);
+            document.getElementById('eco-itau').innerText = formatCurrency(totals['Itaú']);
+            document.getElementById('eco-inter').innerText = formatCurrency(totals['Inter']);
+            document.getElementById('eco-mp').innerText = formatCurrency(totals['Mercado Pago']);
+        }
+
+        function renderWishlist() {
+            const tbody = document.getElementById('tbody-wishlist');
+            tbody.innerHTML = getStripedRow();
+            
+            state.wishlist.forEach(item => {
+                const isComprado = item.status === 'Comprado';
+                const imgPlaceholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZmlsbD0iIzk5OSI+Rm90bzwvdGV4dD48L3N2Zz4=';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-center">
+                        <div class="polaroid p-1 w-20 mx-auto transform rotate-[-3deg] pb-4">
+                            <img src="${item.imgUrl || imgPlaceholder}" class="w-full h-16 object-cover border border-gray-200" onerror="this.src='${imgPlaceholder}'">
+                        </div>
+                    </td>
+                    <td class="font-bebas text-xl">${item.item}</td>
+                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(item.value)}</td>
+                    <td class="font-bebas text-lg">${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-500 underline">Visitar Link</a>` : '-'}</td>
+                    <td>
+                        <select onchange="updateWishlistStatus('${item.id}', this.value)" class="input-pastel py-1 px-2 w-auto font-bebas text-lg ${isComprado ? 'bg-green-100 border-green-300' : ''}">
+                            <option value="Planejando" ${!isComprado ? 'selected' : ''}>Planejando</option>
+                            <option value="Comprado" ${isComprado ? 'selected' : ''}>Comprado</option>
+                        </select>
+                        ${isComprado && item.date ? `<div class="text-xs font-bebas mt-1 opacity-60">Em: ${formatDateBR(item.date)}</div>` : ''}
+                    </td>
+                    <td><button onclick="deleteItem('wishlist', '${item.id}')" class="text-red-500 font-bebas text-xl hover:scale-110 transition">X</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateWishlistStatus(id, newStatus) {
+            const index = state.wishlist.findIndex(i => i.id === id);
+            if (index > -1) {
+                state.wishlist[index].status = newStatus;
+                if (newStatus === 'Comprado') {
+                    // Define a data atual para contabilizar na Saída do mês corrente
+                    state.wishlist[index].date = new Date().toISOString().split('T')[0]; 
+                } else {
+                    state.wishlist[index].date = null;
+                }
+                saveState();
+            }
+        }
+
+        // --- Configuração de Abas e Formulários ---
+        window.onload = () => {
+            loadState();
+
+            const wishlistImageInput = document.getElementById('w-img-file');
+            const wishlistDropzone = document.getElementById('wishlist-dropzone');
+            const wishlistImagePreview = document.getElementById('wishlist-image-preview');
+            const wishlistDropPrompt = document.getElementById('wishlist-drop-prompt');
+
+            const loadWishlistImage = async (file) => {
+                if (!file) return;
+                try {
+                    wishlistImageData = await compressWishlistImage(file);
+                    wishlistImagePreview.src = wishlistImageData;
+                    wishlistImagePreview.hidden = false;
+                    wishlistDropPrompt.hidden = true;
+                } catch (error) {
+                    alert('Não foi possível carregar essa imagem. Escolha um arquivo de imagem.');
+                }
+            };
+
+            wishlistImageInput.addEventListener('change', () => loadWishlistImage(wishlistImageInput.files[0]));
+            wishlistDropzone.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                wishlistDropzone.classList.add('is-dragging');
+            });
+            wishlistDropzone.addEventListener('dragleave', () => wishlistDropzone.classList.remove('is-dragging'));
+            wishlistDropzone.addEventListener('drop', (event) => {
+                event.preventDefault();
+                wishlistDropzone.classList.remove('is-dragging');
+                loadWishlistImage(event.dataTransfer.files[0]);
+            });
+            
+            // Navegação nas Abas
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const targetId = tab.getAttribute('data-target');
+                    contents.forEach(c => {
+                        if(c.id === targetId) c.classList.remove('hide');
+                        else c.classList.add('hide');
+                    });
+                });
+            });
+
+            const expenseDateInput = document.getElementById('g-data');
+            applyBrazilianDateMask(expenseDateInput);
+            applyBrazilianDateMask(document.getElementById('f-data'));
+
+            // Submits
+            document.getElementById('form-gasto').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const expenseDate = parseDateBR(expenseDateInput.value);
+                if (!expenseDate) {
+                    alert('Digite uma data válida no formato dd/mm/aaaa.');
+                    expenseDateInput.focus();
+                    return;
+                }
+                const banco = document.querySelector('input[name="g-banco"]:checked');
+                const tipo = document.querySelector('input[name="g-tipo"]:checked');
+                state.expenses.push({
+                    id: generateId(),
+                    date: expenseDate,
+                    desc: document.getElementById('g-desc').value,
+                    value: document.getElementById('g-valor').value,
+                    bank: banco ? banco.value : '',
+                    payTo: document.getElementById('g-pagar').value,
+                    type: tipo ? tipo.value : 'Saída'
+                });
+                saveState(); e.target.reset();
+            });
+
+            document.getElementById('form-fatura').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const invoiceDate = parseDateBR(document.getElementById('f-data').value);
+                if (!invoiceDate) {
+                    alert('Digite uma data válida no formato dd/mm/aaaa.');
+                    document.getElementById('f-data').focus();
+                    return;
+                }
+                const fatura = document.querySelector('input[name="f-fatura"]:checked');
+                state.invoices.push({
+                    id: generateId(),
+                    date: invoiceDate,
+                    desc: document.getElementById('f-desc').value,
+                    value: document.getElementById('f-valor').value,
+                    installments: document.getElementById('f-parcelas').value,
+                    invoice: fatura ? fatura.value : '',
+                    store: document.getElementById('f-loja').value
+                });
+                saveState(); e.target.reset();
+            });
+
+            document.getElementById('form-economia').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const banco = document.querySelector('input[name="e-banco"]:checked');
+                state.savings.push({
+                    id: generateId(),
+                    date: new Date().toISOString().split('T')[0], // Data de hoje
+                    value: document.getElementById('e-valor').value,
+                    bank: banco ? banco.value : ''
+                });
+                saveState(); e.target.reset();
+            });
+
+            document.getElementById('form-wishlist').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const status = document.getElementById('w-cat').value;
+                state.wishlist.push({
+                    id: generateId(),
+                    item: document.getElementById('w-item').value,
+                    link: document.getElementById('w-link').value,
+                    value: document.getElementById('w-valor').value,
+                    status: status,
+                    imgUrl: wishlistImageData,
+                    date: status === 'Comprado' ? new Date().toISOString().split('T')[0] : null
+                });
+                saveState(); e.target.reset();
+                wishlistImageData = '';
+                wishlistImagePreview.src = '';
+                wishlistImagePreview.hidden = true;
+                wishlistDropPrompt.hidden = false;
+            });
+
+            renderAll();
+        };
+    </script>
+</body>
+</html>
