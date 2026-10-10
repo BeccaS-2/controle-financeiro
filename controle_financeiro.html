@@ -175,6 +175,46 @@
         .tipo-radio input:checked::before {
             transform: scale(1);
         }
+        .invoice-paid-checkbox {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--azul-escuro);
+            cursor: pointer;
+        }
+        #invoice-month-dialog {
+            width: min(90vw, 420px);
+            padding: 0;
+            border: 4px solid var(--azul-pastel);
+            border-radius: 24px;
+            background: var(--bg-creme);
+            color: var(--texto-marrom);
+            box-shadow: 6px 6px 0 rgba(90, 74, 66, 0.3);
+        }
+        #invoice-month-dialog::backdrop {
+            background: rgba(44, 52, 65, 0.45);
+        }
+        .invoice-month-dialog-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 24px;
+        }
+        .invoice-month-dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .invoice-month-dialog-actions button {
+            border: 2px solid var(--azul-pastel);
+            border-radius: 999px;
+            padding: 6px 18px;
+            background: var(--amarelo-pastel);
+            color: var(--texto-marrom);
+            cursor: pointer;
+        }
+        .invoice-month-dialog-actions button[type="submit"] {
+            background: var(--azul-pastel);
+        }
         .expense-date-field,
         .expense-value-field {
             display: flex;
@@ -872,12 +912,12 @@
                     <input type="text" id="f-desc" required class="input-pastel">
                 </div>
                 <div class="flex items-center gap-1">
-                    <label class="w-20 font-bebas text-xl">FATURA:</label>
+                    <label class="w-auto whitespace-nowrap font-bebas text-base">COMPRA DE QUAL FATURA?</label>
                     <div id="invoice-options" class="flex gap-2">
                     </div>
                 </div>
                 <div class="flex items-center gap-1">
-                    <label class="w-20 whitespace-nowrap font-bebas text-base">VALOR:</label>
+                    <label class="w-20 whitespace-nowrap font-bebas text-lg">VALOR:</label>
                     <input type="number" step="0.01" id="f-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00">
                 </div>
                 <div class="flex items-center gap-1">
@@ -897,11 +937,11 @@
                 <table class="tabela-scrap">
                     <thead class="font-bebas">
                         <tr>
-                            <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th>FATURA</th><th>LOJA</th><th>AÇÃO</th>
+                            <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>FATURA</th><th>LOJA</th><th>AÇÃO</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-fatura">
-                        <tr><td colspan="7" class="p-0"><div class="linha-listrada"></div></td></tr>
+                        <tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1048,6 +1088,32 @@
 
     </main>
 
+    <dialog id="invoice-month-dialog" aria-labelledby="invoice-month-title">
+        <form id="invoice-month-form" class="invoice-month-dialog-content">
+            <h2 id="invoice-month-title" class="font-horizon text-2xl text-[var(--azul-escuro)]">MÊS DA FATURA</h2>
+            <label for="f-mes-fatura" class="font-bebas text-xl">DE QUAL MÊS É ESTA FATURA?</label>
+            <select id="f-mes-fatura" required class="input-pastel">
+                <option value="" selected disabled>Selecione o mês</option>
+                <option value="janeiro">Janeiro</option>
+                <option value="fevereiro">Fevereiro</option>
+                <option value="março">Março</option>
+                <option value="abril">Abril</option>
+                <option value="maio">Maio</option>
+                <option value="junho">Junho</option>
+                <option value="julho">Julho</option>
+                <option value="agosto">Agosto</option>
+                <option value="setembro">Setembro</option>
+                <option value="outubro">Outubro</option>
+                <option value="novembro">Novembro</option>
+                <option value="dezembro">Dezembro</option>
+            </select>
+            <div class="invoice-month-dialog-actions font-bebas text-lg">
+                <button type="button" id="cancel-invoice-month">CANCELAR</button>
+                <button type="submit">CONTINUAR</button>
+            </div>
+        </form>
+    </dialog>
+
     <script>
         // Estrutura Base de Dados
         let state = {
@@ -1055,7 +1121,7 @@
             profiles: {},
             incomes: { 'OUT': 0, 'NOV': 0, 'DEZ': 0 },
             expenses: [], // { id, date, desc, value, category, bank, payTo, type }
-            invoices: [], // { id, date, desc, value, installments, invoice, store }
+            invoices: [], // { id, date, desc, value, installments, invoice, store, paid }
             savings: [],  // { id, date, value, bank }
             wishlist: [], // { id, date, item, value, link, status, imgUrl }
             tracking: []  // { id, item, link, imgUrl }
@@ -1553,14 +1619,24 @@
                 tr.innerHTML = `
                     <td class="font-bebas text-lg text-center">${formatDateBR(item.date)}</td>
                     <td class="font-bebas text-lg">${item.desc}</td>
-                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}</td>
+                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}${item.invoiceMonth ? ` - fatura ${item.invoiceMonth}` : ''}</td>
                     <td class="font-bebas text-lg">${instText}</td>
+                    <td class="text-center"><input type="checkbox" class="invoice-paid-checkbox" ${item.paid ? 'checked' : ''} aria-label="Marcar compra ${item.desc} como ${item.paid ? 'não paga' : 'paga'}" title="${item.paid ? 'Paga' : 'Não paga'}" onchange="updateInvoicePaid('${item.id}', this.checked)"></td>
                     <td>${getBankLogoHTML(item.invoice) || item.invoice}</td>
                     <td class="font-bebas text-lg">${item.store}</td>
-                    <td><button onclick="deleteItem('invoices', '${item.id}')" class="text-red-500 font-bebas text-xl hover:scale-110 transition">X</button></td>
+                    <td><button onclick="deleteItem('invoices', '${item.id}')" class="text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition">X</button></td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        function updateInvoicePaid(id, paid) {
+            const invoice = state.invoices.find(item => item.id === id);
+            if (!invoice) {
+                throw new Error(`Compra da fatura não encontrada: ${id}`);
+            }
+            invoice.paid = paid;
+            saveState();
         }
 
         function renderSavings() {
@@ -1762,6 +1838,23 @@
                     document.getElementById('f-data').focus();
                     return;
                 }
+                document.getElementById('f-mes-fatura').value = '';
+                document.getElementById('invoice-month-dialog').showModal();
+            });
+
+            document.getElementById('cancel-invoice-month').addEventListener('click', () => {
+                document.getElementById('invoice-month-dialog').close();
+            });
+
+            document.getElementById('invoice-month-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const invoiceDate = parseDateBR(document.getElementById('f-data').value);
+                if (!invoiceDate) {
+                    document.getElementById('invoice-month-dialog').close();
+                    alert('Digite uma data válida no formato dd/mm/aaaa.');
+                    document.getElementById('f-data').focus();
+                    return;
+                }
                 const fatura = document.querySelector('input[name="f-fatura"]:checked');
                 state.invoices.push({
                     id: generateId(),
@@ -1770,9 +1863,13 @@
                     value: document.getElementById('f-valor').value,
                     installments: document.getElementById('f-parcelas').value,
                     invoice: fatura ? fatura.value : '',
-                    store: document.getElementById('f-loja').value
+                    store: document.getElementById('f-loja').value,
+                    invoiceMonth: document.getElementById('f-mes-fatura').value,
+                    paid: false
                 });
-                saveState(); e.target.reset();
+                document.getElementById('invoice-month-dialog').close();
+                document.getElementById('form-fatura').reset();
+                saveState();
             });
 
             document.getElementById('form-economia').addEventListener('submit', (e) => {
