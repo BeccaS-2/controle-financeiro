@@ -175,7 +175,8 @@
         .tipo-radio input:checked::before {
             transform: scale(1);
         }
-        .invoice-paid-checkbox {
+        .invoice-paid-checkbox,
+        .expense-paid-checkbox {
             width: 18px;
             height: 18px;
             accent-color: var(--azul-escuro);
@@ -214,6 +215,12 @@
         }
         .invoice-month-dialog-actions button[type="submit"] {
             background: var(--azul-pastel);
+        }
+        .invoice-table-filter {
+            width: auto;
+            min-width: 150px;
+            padding: 5px 12px;
+            font-size: 1rem;
         }
         .expense-date-field,
         .expense-value-field {
@@ -881,15 +888,32 @@
             <div class="tabela-container">
                 <!-- Laço Decorativo -->
                 <img src="laço.png" alt="Laço" class="absolute -top-6 -right-6 w-24 drop-shadow-md z-10">
-                
+                <div class="mb-2 flex justify-end">
+                    <label for="expense-month-filter" class="sr-only">Filtrar gastos por mês</label>
+                    <select id="expense-month-filter" class="input-pastel invoice-table-filter" aria-label="Filtrar gastos por mês">
+                        <option value="all">Todos os meses</option>
+                        <option value="01">Janeiro</option>
+                        <option value="02">Fevereiro</option>
+                        <option value="03">Março</option>
+                        <option value="04">Abril</option>
+                        <option value="05">Maio</option>
+                        <option value="06">Junho</option>
+                        <option value="07">Julho</option>
+                        <option value="08">Agosto</option>
+                        <option value="09">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
                 <table class="tabela-scrap">
                     <thead class="font-bebas">
                         <tr>
-                            <th>DATA</th><th>DESCRIÇÃO</th><th>VALOR</th><th>BANCO</th><th>PAGAR PARA</th><th>TIPO</th><th>AÇÃO</th>
+                            <th>DATA</th><th>DESCRIÇÃO</th><th>VALOR</th><th>BANCO</th><th>PAGAR PARA</th><th>TIPO</th><th class="text-center">PAGO?</th><th>AÇÃO</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-gastos">
-                        <tr><td colspan="7" class="p-0"><div class="linha-listrada"></div></td></tr>
+                        <tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -934,6 +958,24 @@
             </form>
 
             <div class="tabela-container">
+                <div class="mb-2 flex justify-end">
+                    <label for="invoice-month-filter" class="sr-only">Filtrar compras por mês da fatura</label>
+                    <select id="invoice-month-filter" class="input-pastel invoice-table-filter" aria-label="Filtrar por mês da fatura">
+                        <option value="all">Todos os meses</option>
+                        <option value="janeiro">Janeiro</option>
+                        <option value="fevereiro">Fevereiro</option>
+                        <option value="março">Março</option>
+                        <option value="abril">Abril</option>
+                        <option value="maio">Maio</option>
+                        <option value="junho">Junho</option>
+                        <option value="julho">Julho</option>
+                        <option value="agosto">Agosto</option>
+                        <option value="setembro">Setembro</option>
+                        <option value="outubro">Outubro</option>
+                        <option value="novembro">Novembro</option>
+                        <option value="dezembro">Dezembro</option>
+                    </select>
+                </div>
                 <table class="tabela-scrap">
                     <thead class="font-bebas">
                         <tr>
@@ -1120,7 +1162,7 @@
             profile: 'rebecca',
             profiles: {},
             incomes: { 'OUT': 0, 'NOV': 0, 'DEZ': 0 },
-            expenses: [], // { id, date, desc, value, category, bank, payTo, type }
+            expenses: [], // { id, date, desc, value, category, bank, payTo, type, paid }
             invoices: [], // { id, date, desc, value, installments, invoice, store, paid }
             savings: [],  // { id, date, value, bank }
             wishlist: [], // { id, date, item, value, link, status, imgUrl }
@@ -1163,6 +1205,32 @@
             // Mapeamento (10 = OUT, 11 = NOV, 12 = DEZ)
             const map = { 10: 'OUT', 11: 'NOV', 12: 'DEZ' };
             return map[month] || null; // Ignora se não for out/nov/dez para este MVP específico
+        }
+
+        function getCycleMonthNumber(dateString) {
+            if (!dateString) return null;
+            const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+
+            const cutoffDay = state.profile === 'lenira' ? 10 : 27;
+            const cycleMonth = month + (day >= cutoffDay ? 1 : 0);
+            return cycleMonth > 12 ? 1 : cycleMonth;
+        }
+
+        function updateExpenseMonthFilterLabels() {
+            const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            const cutoffDay = state.profile === 'lenira' ? 10 : 27;
+            const filter = document.getElementById('expense-month-filter');
+
+            Array.from(filter.options).forEach((option) => {
+                const month = Number(option.value);
+                if (!month) return;
+
+                const previousMonth = month === 1 ? 12 : month - 1;
+                const endDay = cutoffDay - 1;
+                option.textContent = `${monthNames[month - 1]} (${cutoffDay}/${String(previousMonth).padStart(2, '0')} a ${endDay}/${String(month).padStart(2, '0')})`;
+            });
         }
 
         // --- Persistência de Dados (localStorage) ---
@@ -1427,6 +1495,7 @@
             state.profiles[state.profile] = getActiveProfileData();
             state.profile = profile;
             loadProfileData(profile);
+            updateExpenseMonthFilterLabels();
             document.querySelectorAll('.monthly-profile-option').forEach(button => {
                 button.setAttribute('aria-pressed', String(button.dataset.profile === profile));
             });
@@ -1535,8 +1604,11 @@
             state.expenses.forEach(ex => {
                 const monthLabel = getCycleMonthLabel(ex.date);
                 if (monthLabel && outTotals[monthLabel] !== undefined) {
-                    const total = ex.type === 'Entrada' ? inTotals : outTotals;
-                    total[monthLabel] += parseFloat(ex.value) || 0;
+                    if (ex.type === 'Entrada') {
+                        inTotals[monthLabel] += parseFloat(ex.value) || 0;
+                    } else if (ex.paid) {
+                        outTotals[monthLabel] += parseFloat(ex.value) || 0;
+                    }
                 }
             });
 
@@ -1578,9 +1650,12 @@
 
         function renderExpenses() {
             const tbody = document.getElementById('tbody-gastos');
-            tbody.innerHTML = getStripedRow();
+            tbody.innerHTML = '<tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>';
+            const selectedMonth = document.getElementById('expense-month-filter').value;
             
-            const sorted = [...state.expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+            const sorted = [...state.expenses]
+                .filter(item => selectedMonth === 'all' || String(getCycleMonthNumber(item.date)).padStart(2, '0') === selectedMonth)
+                .sort((a,b) => new Date(b.date) - new Date(a.date));
 
             sorted.forEach(item => {
                 const transactionType = item.type === 'Entrada' ? 'Entrada' : 'Saída';
@@ -1592,10 +1667,23 @@
                     <td>${getBankLogoHTML(item.bank)}</td>
                     <td class="font-bebas text-lg">${item.payTo}</td>
                     <td class="font-bebas text-lg text-[var(--texto-marrom)]">${transactionType}</td>
+                    <td class="text-center">${item.type === 'Entrada' ? '' : `<input type="checkbox" class="expense-paid-checkbox" ${item.paid ? 'checked' : ''} aria-label="Marcar gasto ${item.desc} como ${item.paid ? 'não pago' : 'pago'}" title="${item.paid ? 'Pago' : 'Não pago'}" onchange="updateExpensePaid('${item.id}', this.checked)">`}</td>
                     <td><button onclick="deleteItem('expenses', '${item.id}')" class="text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition">X</button></td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        function updateExpensePaid(id, paid) {
+            const expense = state.expenses.find(item => item.id === id);
+            if (!expense) {
+                throw new Error(`Gasto não encontrado: ${id}`);
+            }
+            if (expense.type === 'Entrada') {
+                throw new Error(`Não é possível marcar uma entrada como paga: ${id}`);
+            }
+            expense.paid = paid;
+            saveState();
         }
 
         function renderInvoices() {
@@ -1603,8 +1691,11 @@
             tbody.innerHTML = getStripedRow();
             
             const now = new Date();
+            const selectedMonth = document.getElementById('invoice-month-filter').value;
             
-            state.invoices.forEach(item => {
+            state.invoices
+                .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth)
+                .forEach(item => {
                 const valParcela = parseFloat(item.value) / parseInt(item.installments);
                 
                 // Lógica simples para identificar a parcela atual (baseado no mês da compra)
@@ -1708,9 +1799,12 @@
         // --- Configuração de Abas e Formulários ---
         window.onload = () => {
             loadState();
+            updateExpenseMonthFilterLabels();
             renderExpenseBankOptions();
             renderInvoiceOptions();
             renderEconomyBanks();
+            document.getElementById('expense-month-filter').addEventListener('change', renderExpenses);
+            document.getElementById('invoice-month-filter').addEventListener('change', renderInvoices);
             document.querySelectorAll('.monthly-profile-option').forEach(button => {
                 button.setAttribute('aria-pressed', String(button.dataset.profile === state.profile));
                 button.addEventListener('click', () => setFinancialProfile(button.dataset.profile));
@@ -1825,7 +1919,8 @@
                     value: document.getElementById('g-valor').value,
                     bank: banco ? banco.value : '',
                     payTo: document.getElementById('g-pagar').value,
-                    type: tipo ? tipo.value : 'Saída'
+                    type: tipo ? tipo.value : 'Saída',
+                    paid: false
                 });
                 saveState(); e.target.reset();
             });
