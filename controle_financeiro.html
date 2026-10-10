@@ -1474,15 +1474,13 @@
                 }
             });
 
-            // Soma Economias (Aba 4)
+            // Retiradas da economia entram como receita; depósitos não são saídas.
             state.savings.forEach(sv => {
                 const monthLabel = getCycleMonthLabel(sv.date);
                 if (monthLabel && outTotals[monthLabel] !== undefined) {
                     const savingsValue = parseFloat(sv.value) || 0;
                     if (savingsValue < 0) {
                         inTotals[monthLabel] += Math.abs(savingsValue);
-                    } else {
-                        outTotals[monthLabel] += savingsValue;
                     }
                 }
             });
