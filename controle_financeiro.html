@@ -864,10 +864,7 @@
                 </div>
                 <div class="economy-field-row">
                     <span class="economy-field-label">BANCO:</span>
-                    <div class="economy-bank-options">
-                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Pan" required><img src="pan.png" alt="Pan" class="h-6" onerror="this.hidden=true; this.nextElementSibling.hidden=false"><span hidden>Pan</span></label>
-                        <label class="economy-bank-option"><input type="radio" name="e-banco" value="Safra"><img src="safra.png" alt="Safra" class="h-6" onerror="this.hidden=true; this.nextElementSibling.hidden=false"><span hidden>Safra</span></label>
-                    </div>
+                    <div id="economy-bank-options" class="economy-bank-options"></div>
                 </div>
             </form>
 
@@ -885,18 +882,7 @@
                 </div>
 
                 <!-- Subtotais por banco -->
-                <div class="economy-bank-totals">
-                    <div class="economy-bank-total">
-                        <img src="pan.png" alt="Pan" class="h-8" onerror="this.hidden=true; this.nextElementSibling.hidden=false">
-                        <span hidden>Pan</span>
-                        <span id="eco-pan">R$ 0,00</span>
-                    </div>
-                    <div class="economy-bank-total">
-                        <img src="safra.png" alt="Safra" class="h-8" onerror="this.hidden=true; this.nextElementSibling.hidden=false">
-                        <span hidden>Safra</span>
-                        <span id="eco-safra">R$ 0,00</span>
-                    </div>
-                </div>
+                <div id="economy-bank-totals" class="economy-bank-totals"></div>
             </div>
         </section>
 
@@ -963,6 +949,7 @@
         // Estrutura Base de Dados
         let state = {
             profile: 'rebecca',
+            profiles: {},
             incomes: { 'OUT': 0, 'NOV': 0, 'DEZ': 0 },
             expenses: [], // { id, date, desc, value, category, bank, payTo, type }
             invoices: [], // { id, date, desc, value, installments, invoice, store }
@@ -1016,25 +1003,56 @@
             });
         }
 
+        function getActiveProfileData() {
+            return {
+                incomes: { ...state.incomes },
+                expenses: state.expenses,
+                invoices: state.invoices,
+                savings: state.savings,
+                wishlist: state.wishlist
+            };
+        }
+
+        function loadProfileData(profile) {
+            const profileData = state.profiles[profile] || {};
+            state.incomes = { 'OUT': 0, 'NOV': 0, 'DEZ': 0, ...profileData.incomes };
+            state.expenses = Array.isArray(profileData.expenses) ? profileData.expenses : [];
+            state.invoices = Array.isArray(profileData.invoices) ? profileData.invoices : [];
+            state.savings = Array.isArray(profileData.savings) ? profileData.savings : [];
+            state.wishlist = Array.isArray(profileData.wishlist) ? profileData.wishlist : [];
+        }
+
         function loadState() {
             const saved = localStorage.getItem('controleFinanceiroScrapbook');
             if (saved) {
                 const savedState = JSON.parse(saved);
+                const savedProfile = savedState.profile === 'lenira' ? 'lenira' : 'rebecca';
+                const profiles = savedState.profiles && typeof savedState.profiles === 'object'
+                    ? savedState.profiles
+                    : {
+                        // Existing shared data is retained under Rebecca during migration.
+                        rebecca: {
+                            incomes: savedState.incomes,
+                            expenses: savedState.expenses,
+                            invoices: savedState.invoices,
+                            savings: savedState.savings,
+                            wishlist: savedState.wishlist
+                        }
+                    };
                 state = {
                     ...state,
-                    ...savedState,
-                    incomes: { ...state.incomes, ...savedState.incomes }
+                    profile: savedProfile,
+                    profiles
                 };
-                if (state.profile !== 'lenira' && state.profile !== 'rebecca') {
-                    state.profile = 'rebecca';
-                }
-                document.getElementById('in-out').value = formatIncomeInput(state.incomes.OUT);
-                document.getElementById('in-nov').value = formatIncomeInput(state.incomes.NOV);
-                document.getElementById('in-dez').value = formatIncomeInput(state.incomes.DEZ);
+                loadProfileData(state.profile);
             }
+            document.getElementById('in-out').value = formatIncomeInput(state.incomes.OUT);
+            document.getElementById('in-nov').value = formatIncomeInput(state.incomes.NOV);
+            document.getElementById('in-dez').value = formatIncomeInput(state.incomes.DEZ);
         }
         
         function saveState() {
+            state.profiles[state.profile] = getActiveProfileData();
             localStorage.setItem('controleFinanceiroScrapbook', JSON.stringify(state));
             renderAll();
         }
@@ -1155,17 +1173,93 @@
             });
         }
 
+        function getEconomyBanks() {
+            return state.profile === 'lenira'
+                ? [
+                    { name: 'Pan', image: 'pan.png' },
+                    { name: 'Safra', image: 'safra.png' }
+                ]
+                : [
+                    { name: 'Itaú', image: 'itau.png' },
+                    { name: 'Inter', image: 'banco_inter.png' },
+                    { name: 'Mercado Pago', image: 'Mercado_pagp.png' }
+                ];
+        }
+
+        function renderEconomyBanks() {
+            const banks = getEconomyBanks();
+            const optionsContainer = document.getElementById('economy-bank-options');
+            const totalsContainer = document.getElementById('economy-bank-totals');
+            optionsContainer.replaceChildren();
+            totalsContainer.replaceChildren();
+
+            banks.forEach((bank, index) => {
+                const option = document.createElement('label');
+                option.className = 'economy-bank-option';
+
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'e-banco';
+                input.value = bank.name;
+                input.required = index === 0;
+
+                const optionImage = document.createElement('img');
+                optionImage.src = bank.image;
+                optionImage.alt = bank.name;
+                optionImage.className = 'h-6';
+                optionImage.addEventListener('error', () => {
+                    optionImage.hidden = true;
+                    optionName.hidden = false;
+                });
+
+                const optionName = document.createElement('span');
+                optionName.textContent = bank.name;
+                optionName.hidden = true;
+
+                option.append(input, optionImage, optionName);
+                optionsContainer.appendChild(option);
+
+                const totalCard = document.createElement('div');
+                totalCard.className = 'economy-bank-total';
+
+                const totalImage = document.createElement('img');
+                totalImage.src = bank.image;
+                totalImage.alt = bank.name;
+                totalImage.className = 'h-8';
+                totalImage.addEventListener('error', () => {
+                    totalImage.hidden = true;
+                    totalName.hidden = false;
+                });
+
+                const totalName = document.createElement('span');
+                totalName.textContent = bank.name;
+                totalName.hidden = true;
+
+                const totalValue = document.createElement('span');
+                totalValue.id = `eco-${bank.name.toLowerCase().replace(/\s+/g, '-')}`;
+                totalValue.textContent = formatCurrency(0);
+
+                totalCard.append(totalImage, totalName, totalValue);
+                totalsContainer.appendChild(totalCard);
+            });
+        }
+
         function setFinancialProfile(profile) {
             if (profile !== 'rebecca' && profile !== 'lenira') {
                 throw new Error(`Perfil financeiro inválido: ${profile}`);
             }
 
+            if (profile === state.profile) return;
+
+            state.profiles[state.profile] = getActiveProfileData();
             state.profile = profile;
+            loadProfileData(profile);
             document.querySelectorAll('.monthly-profile-option').forEach(button => {
                 button.setAttribute('aria-pressed', String(button.dataset.profile === profile));
             });
             renderExpenseBankOptions();
             renderInvoiceOptions();
+            renderEconomyBanks();
             saveState();
         }
 
@@ -1305,7 +1399,11 @@
         }
 
         function renderSavings() {
-            let totals = { 'Pan': 0, 'Safra': 0, total: 0 };
+            const banks = getEconomyBanks();
+            const totals = { total: 0 };
+            banks.forEach(bank => {
+                totals[bank.name] = 0;
+            });
             
             state.savings.forEach(item => {
                 const val = parseFloat(item.value);
@@ -1314,8 +1412,10 @@
             });
 
             document.getElementById('eco-total').innerText = formatCurrency(totals.total);
-            document.getElementById('eco-pan').innerText = formatCurrency(totals['Pan']);
-            document.getElementById('eco-safra').innerText = formatCurrency(totals['Safra']);
+            banks.forEach(bank => {
+                const bankTotal = document.getElementById(`eco-${bank.name.toLowerCase().replace(/\s+/g, '-')}`);
+                bankTotal.innerText = formatCurrency(totals[bank.name]);
+            });
         }
 
         function renderWishlist() {
@@ -1368,6 +1468,7 @@
             loadState();
             renderExpenseBankOptions();
             renderInvoiceOptions();
+            renderEconomyBanks();
             document.querySelectorAll('.monthly-profile-option').forEach(button => {
                 button.setAttribute('aria-pressed', String(button.dataset.profile === state.profile));
                 button.addEventListener('click', () => setFinancialProfile(button.dataset.profile));
