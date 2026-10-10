@@ -1435,7 +1435,7 @@
                     </td>
                     <td class="font-bebas text-xl">${item.item}</td>
                     <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(item.value)}</td>
-                    <td class="font-bebas text-lg">${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-500 underline">Visitar Link</a>` : '-'}</td>
+                    <td class="font-bebas text-lg">${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-300 underline">Visitar Link</a>` : '-'}</td>
                     <td>
                         <select onchange="updateWishlistStatus('${item.id}', this.value)" class="input-pastel py-1 px-2 w-auto font-bebas text-lg ${isComprado ? 'bg-green-100 border-green-300' : ''}">
                             <option value="Planejando" ${!isComprado ? 'selected' : ''}>Planejando</option>
