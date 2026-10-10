@@ -191,6 +191,20 @@
             color: var(--texto-marrom);
             box-shadow: 6px 6px 0 rgba(90, 74, 66, 0.3);
         }
+        #wishlist-purchase-dialog {
+            width: min(90vw, 520px);
+            max-height: 90vh;
+            padding: 0;
+            border: 4px solid var(--azul-pastel);
+            border-radius: 24px;
+            background: var(--bg-creme);
+            color: var(--texto-marrom);
+            box-shadow: 6px 6px 0 rgba(90, 74, 66, 0.3);
+            overflow-y: auto;
+        }
+        #wishlist-purchase-dialog::backdrop {
+            background: rgba(44, 52, 65, 0.45);
+        }
         #invoice-month-dialog::backdrop {
             background: rgba(44, 52, 65, 0.45);
         }
@@ -221,6 +235,58 @@
             min-width: 150px;
             padding: 5px 12px;
             font-size: 1rem;
+        }
+        .invoice-summary {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 48px;
+            padding: 6px 16px;
+            border: 2px solid var(--azul-escuro);
+            border-radius: 16px;
+            background: var(--amarelo-pastel);
+            color: var(--texto-marrom);
+        }
+        .invoice-summary-total {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+        .wishlist-purchased-status {
+            background-color: var(--azul-pastel);
+            border-color: var(--azul-escuro);
+        }
+        .invoice-select-all {
+            position: relative;
+            display: inline-flex;
+            width: 24px;
+            height: 24px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .invoice-select-all input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+        }
+        .invoice-select-all img {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            opacity: 0.55;
+            transition: opacity 0.2s, transform 0.2s, filter 0.2s;
+        }
+        .invoice-select-all input:checked + img,
+        .invoice-select-all input:indeterminate + img {
+            opacity: 1;
+            filter: drop-shadow(0 1px 2px rgba(90, 74, 66, 0.4));
+            transform: scale(1.08);
+        }
+        .invoice-select-all input:focus-visible + img {
+            outline: 2px solid var(--azul-escuro);
+            outline-offset: 2px;
+            border-radius: 50%;
         }
         .expense-date-field,
         .expense-value-field {
@@ -958,23 +1024,33 @@
             </form>
 
             <div class="tabela-container">
-                <div class="mb-2 flex justify-end">
-                    <label for="invoice-month-filter" class="sr-only">Filtrar compras por mês da fatura</label>
-                    <select id="invoice-month-filter" class="input-pastel invoice-table-filter" aria-label="Filtrar por mês da fatura">
-                        <option value="all">Todos os meses</option>
-                        <option value="janeiro">Janeiro</option>
-                        <option value="fevereiro">Fevereiro</option>
-                        <option value="março">Março</option>
-                        <option value="abril">Abril</option>
-                        <option value="maio">Maio</option>
-                        <option value="junho">Junho</option>
-                        <option value="julho">Julho</option>
-                        <option value="agosto">Agosto</option>
-                        <option value="setembro">Setembro</option>
-                        <option value="outubro">Outubro</option>
-                        <option value="novembro">Novembro</option>
-                        <option value="dezembro">Dezembro</option>
-                    </select>
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <div class="invoice-summary font-bebas" aria-live="polite">
+                        <span>TOTAL DA FATURA</span>
+                        <strong id="invoice-total" class="invoice-summary-total" aria-atomic="true">R$ 0,00</strong>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-end gap-3">
+                        <label for="invoice-month-filter" class="sr-only">Filtrar compras por mês da fatura</label>
+                        <select id="invoice-month-filter" class="input-pastel invoice-table-filter" aria-label="Filtrar por mês da fatura">
+                            <option value="all">Todos os meses</option>
+                            <option value="janeiro">Janeiro</option>
+                            <option value="fevereiro">Fevereiro</option>
+                            <option value="março">Março</option>
+                            <option value="abril">Abril</option>
+                            <option value="maio">Maio</option>
+                            <option value="junho">Junho</option>
+                            <option value="julho">Julho</option>
+                            <option value="agosto">Agosto</option>
+                            <option value="setembro">Setembro</option>
+                            <option value="outubro">Outubro</option>
+                            <option value="novembro">Novembro</option>
+                            <option value="dezembro">Dezembro</option>
+                        </select>
+                        <label class="invoice-select-all" title="Marcar todos os itens exibidos como pagos">
+                            <input type="checkbox" id="invoice-select-all-paid" class="invoice-paid-checkbox" aria-label="Marcar todos os itens exibidos como pagos">
+                            <img src="flor.png" alt="">
+                        </label>
+                    </div>
                 </div>
                 <table class="tabela-scrap">
                     <thead class="font-bebas">
@@ -1128,6 +1204,72 @@
             </div>
         </section>
 
+        <dialog id="wishlist-purchase-dialog" aria-labelledby="wishlist-purchase-title">
+            <form id="wishlist-purchase-form" class="invoice-month-dialog-content">
+                <h2 id="wishlist-purchase-title" class="font-horizon text-2xl text-[var(--azul-escuro)]">ITEM COMPRADO</h2>
+                <p id="wishlist-purchase-item" class="font-bebas text-xl"></p>
+                <fieldset class="flex flex-wrap gap-4 font-bebas text-lg">
+                    <legend class="mb-2">A compra foi no crédito?</legend>
+                    <label class="tipo-radio"><input type="radio" name="wishlist-payment-method" value="credit" required><span>Sim, crédito</span></label>
+                    <label class="tipo-radio"><input type="radio" name="wishlist-payment-method" value="other" required><span>Não, outro método</span></label>
+                </fieldset>
+                <div class="flex items-center gap-2">
+                    <label for="wishlist-purchase-date" class="w-24 font-bebas text-lg">DATA:</label>
+                    <input type="date" id="wishlist-purchase-date" class="input-pastel" required>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label for="wishlist-purchase-description" class="w-24 font-bebas text-lg">DESCRIÇÃO:</label>
+                    <input type="text" id="wishlist-purchase-description" class="input-pastel" required>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label for="wishlist-purchase-value" class="w-24 font-bebas text-lg">VALOR:</label>
+                    <input type="number" id="wishlist-purchase-value" min="0.01" step="0.01" class="input-pastel" required>
+                </div>
+                <fieldset id="wishlist-credit-fields" class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0" disabled hidden>
+                    <div class="flex items-center gap-2">
+                        <label for="wishlist-credit-invoice" class="w-24 font-bebas text-lg">FATURA:</label>
+                        <select id="wishlist-credit-invoice" class="input-pastel" required></select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="wishlist-credit-month" class="w-24 font-bebas text-lg">MÊS:</label>
+                        <select id="wishlist-credit-month" class="input-pastel" required>
+                            <option value="" selected disabled>Selecione o mês</option>
+                            <option value="janeiro">Janeiro</option>
+                            <option value="fevereiro">Fevereiro</option>
+                            <option value="março">Março</option>
+                            <option value="abril">Abril</option>
+                            <option value="maio">Maio</option>
+                            <option value="junho">Junho</option>
+                            <option value="julho">Julho</option>
+                            <option value="agosto">Agosto</option>
+                            <option value="setembro">Setembro</option>
+                            <option value="outubro">Outubro</option>
+                            <option value="novembro">Novembro</option>
+                            <option value="dezembro">Dezembro</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="wishlist-credit-installments" class="w-24 font-bebas text-lg">PARCELAS:</label>
+                        <input type="number" id="wishlist-credit-installments" min="1" step="1" value="1" class="input-pastel" required>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="wishlist-credit-store" class="w-24 font-bebas text-lg">LOJA:</label>
+                        <input type="text" id="wishlist-credit-store" class="input-pastel">
+                    </div>
+                </fieldset>
+                <fieldset id="wishlist-other-fields" class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0" disabled hidden>
+                    <div class="flex items-center gap-2">
+                        <label for="wishlist-expense-bank" class="w-24 font-bebas text-lg">BANCO:</label>
+                        <select id="wishlist-expense-bank" class="input-pastel" required></select>
+                    </div>
+                </fieldset>
+                <div class="invoice-month-dialog-actions font-bebas text-lg">
+                    <button type="button" id="cancel-wishlist-purchase">CANCELAR</button>
+                    <button type="submit">REGISTRAR</button>
+                </div>
+            </form>
+        </dialog>
+
     </main>
 
     <dialog id="invoice-month-dialog" aria-labelledby="invoice-month-title">
@@ -1170,6 +1312,7 @@
         };
         let wishlistImageData = '';
         let trackingImageData = '';
+        let pendingWishlistPurchaseId = null;
 
         async function compressImage(file) {
             if (!file.type.startsWith('image/')) throw new Error('Arquivo não é uma imagem.');
@@ -1351,8 +1494,8 @@
             return bankName;
         }
 
-        function renderExpenseBankOptions() {
-            const bankOptions = state.profile === 'lenira'
+        function getExpenseBankOptions() {
+            return state.profile === 'lenira'
                 ? [
                     { name: 'Pan', image: 'pan.png' },
                     { name: 'Safra', image: 'safra.png' }
@@ -1362,6 +1505,10 @@
                     { name: 'Inter', image: 'banco_inter.png' },
                     { name: 'Mercado Pago', image: 'Mercado_pagp.png' }
                 ];
+        }
+
+        function renderExpenseBankOptions() {
+            const bankOptions = getExpenseBankOptions();
             const container = document.getElementById('expense-bank-options');
             container.replaceChildren();
 
@@ -1392,10 +1539,14 @@
             });
         }
 
-        function renderInvoiceOptions() {
-            const invoiceOptions = state.profile === 'lenira'
+        function getInvoiceOptions() {
+            return state.profile === 'lenira'
                 ? ['Shopee', 'Coin']
                 : ['Itaú', 'Shopee'];
+        }
+
+        function renderInvoiceOptions() {
+            const invoiceOptions = getInvoiceOptions();
             const container = document.getElementById('invoice-options');
             container.replaceChildren();
 
@@ -1578,7 +1729,7 @@
                 const actionCell = document.createElement('td');
                 const deleteButton = document.createElement('button');
                 deleteButton.type = 'button';
-                deleteButton.className = 'text-red-500 font-bebas text-xl hover:scale-110 transition';
+                deleteButton.className = 'text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition';
                 deleteButton.textContent = 'X';
                 deleteButton.setAttribute('aria-label', `Remover rastreio${item.item ? ` de ${item.item}` : ''}`);
                 deleteButton.addEventListener('click', () => {
@@ -1626,6 +1777,9 @@
             // Soma Wishlist Comprados (Aba 5)
             state.wishlist.forEach(wl => {
                 if (wl.status === 'Comprado' && wl.date) {
+                    const expenseAlreadyCounted = wl.expenseId
+                        && state.expenses.some(expense => expense.id === wl.expenseId && expense.paid);
+                    if (expenseAlreadyCounted) return;
                     const monthLabel = getCycleMonthLabel(wl.date);
                     if (monthLabel && outTotals[monthLabel] !== undefined) {
                         outTotals[monthLabel] += (parseFloat(wl.value) || 0) + (parseFloat(wl.freight) || 0);
@@ -1674,6 +1828,32 @@
             });
         }
 
+        function openWishlistPurchaseDialog(item) {
+            const today = new Date().toISOString().split('T')[0];
+            const total = Number(item.value || 0) + Number(item.freight || 0);
+            const form = document.getElementById('wishlist-purchase-form');
+            form.reset();
+            document.getElementById('wishlist-credit-fields').disabled = true;
+            document.getElementById('wishlist-credit-fields').hidden = true;
+            document.getElementById('wishlist-other-fields').disabled = true;
+            document.getElementById('wishlist-other-fields').hidden = true;
+            document.getElementById('wishlist-purchase-item').textContent = item.item;
+            document.getElementById('wishlist-credit-invoice').replaceChildren(
+                new Option('Selecione a fatura', '', true, true),
+                ...getInvoiceOptions().map(invoice => new Option(invoice, invoice))
+            );
+            const expenseBank = document.getElementById('wishlist-expense-bank');
+            expenseBank.replaceChildren(new Option('Selecione o banco', ''));
+            getExpenseBankOptions().forEach(bank => expenseBank.add(new Option(bank.name, bank.name)));
+            form.dataset.itemId = item.id;
+            document.getElementById('wishlist-purchase-date').value = today;
+            document.getElementById('wishlist-purchase-description').value = item.item;
+            document.getElementById('wishlist-purchase-value').value = total.toFixed(2);
+            document.getElementById('wishlist-credit-store').value = item.store || '';
+            pendingWishlistPurchaseId = item.id;
+            document.getElementById('wishlist-purchase-dialog').showModal();
+        }
+
         function updateExpensePaid(id, paid) {
             const expense = state.expenses.find(item => item.id === id);
             if (!expense) {
@@ -1692,10 +1872,24 @@
             
             const now = new Date();
             const selectedMonth = document.getElementById('invoice-month-filter').value;
+            const filteredInvoices = state.invoices
+                .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth);
+            const total = filteredInvoices.reduce((sum, item) => (
+                sum + parseFloat(item.value) / parseInt(item.installments)
+            ), 0);
+            const selectAllPaid = document.getElementById('invoice-select-all-paid');
+            const paidCount = filteredInvoices.filter(item => item.paid).length;
+            document.getElementById('invoice-total').textContent = formatCurrency(total);
+            selectAllPaid.checked = filteredInvoices.length > 0 && paidCount === filteredInvoices.length;
+            selectAllPaid.indeterminate = paidCount > 0 && paidCount < filteredInvoices.length;
+            selectAllPaid.disabled = filteredInvoices.length === 0;
+            const selectAllLabel = selectAllPaid.checked
+                ? 'Desmarcar todos os itens exibidos como pagos'
+                : 'Marcar todos os itens exibidos como pagos';
+            selectAllPaid.setAttribute('aria-label', selectAllLabel);
+            selectAllPaid.parentElement.title = selectAllLabel;
             
-            state.invoices
-                .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth)
-                .forEach(item => {
+            filteredInvoices.forEach(item => {
                 const valParcela = parseFloat(item.value) / parseInt(item.installments);
                 
                 // Lógica simples para identificar a parcela atual (baseado no mês da compra)
@@ -1719,6 +1913,16 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        function updateVisibleInvoicesPaid(paid) {
+            const selectedMonth = document.getElementById('invoice-month-filter').value;
+            state.invoices
+                .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth)
+                .forEach(item => {
+                    item.paid = paid;
+                });
+            saveState();
         }
 
         function updateInvoicePaid(id, paid) {
@@ -1770,30 +1974,30 @@
                     <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(item.freight || 0)}</td>
                     <td class="font-bebas text-lg">${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-300 underline">Visitar Link</a>` : '-'}</td>
                     <td>
-                        <select onchange="updateWishlistStatus('${item.id}', this.value)" class="input-pastel py-1 px-2 w-auto font-bebas text-lg ${isComprado ? 'bg-green-100 border-green-300' : ''}">
+                        <select onchange="updateWishlistStatus('${item.id}', this.value)" class="input-pastel py-1 px-2 w-auto font-bebas text-lg ${isComprado ? 'wishlist-purchased-status' : ''}">
                             <option value="Planejando" ${!isComprado ? 'selected' : ''}>Planejando</option>
                             <option value="Comprado" ${isComprado ? 'selected' : ''}>Comprado</option>
                         </select>
                         ${isComprado && item.date ? `<div class="text-xs font-bebas mt-1 opacity-60">Em: ${formatDateBR(item.date)}</div>` : ''}
                     </td>
-                    <td><button onclick="deleteItem('wishlist', '${item.id}')" class="text-red-500 font-bebas text-xl hover:scale-110 transition">X</button></td>
+                    <td><button onclick="deleteItem('wishlist', '${item.id}')" class="text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition">X</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
         function updateWishlistStatus(id, newStatus) {
-            const index = state.wishlist.findIndex(i => i.id === id);
-            if (index > -1) {
-                state.wishlist[index].status = newStatus;
-                if (newStatus === 'Comprado') {
-                    // Define a data atual para contabilizar na Saída do mês corrente
-                    state.wishlist[index].date = new Date().toISOString().split('T')[0]; 
-                } else {
-                    state.wishlist[index].date = null;
-                }
-                saveState();
+            const item = state.wishlist.find(i => i.id === id);
+            if (!item) {
+                throw new Error(`Item da Wishlist não encontrado: ${id}`);
             }
+            if (newStatus === 'Comprado') {
+                openWishlistPurchaseDialog(item);
+                return;
+            }
+            item.status = 'Planejando';
+            item.date = null;
+            saveState();
         }
 
         // --- Configuração de Abas e Formulários ---
@@ -1805,6 +2009,90 @@
             renderEconomyBanks();
             document.getElementById('expense-month-filter').addEventListener('change', renderExpenses);
             document.getElementById('invoice-month-filter').addEventListener('change', renderInvoices);
+            document.getElementById('invoice-select-all-paid').addEventListener('change', (event) => {
+                updateVisibleInvoicesPaid(event.currentTarget.checked);
+            });
+            document.querySelectorAll('input[name="wishlist-payment-method"]').forEach(input => {
+                input.addEventListener('change', (event) => {
+                    const isCredit = event.currentTarget.value === 'credit';
+                    const creditFields = document.getElementById('wishlist-credit-fields');
+                    const otherFields = document.getElementById('wishlist-other-fields');
+                    creditFields.disabled = !isCredit;
+                    creditFields.hidden = !isCredit;
+                    otherFields.disabled = isCredit;
+                    otherFields.hidden = isCredit;
+                });
+            });
+            document.getElementById('cancel-wishlist-purchase').addEventListener('click', () => {
+                document.getElementById('wishlist-purchase-dialog').close();
+            });
+            document.getElementById('wishlist-purchase-dialog').addEventListener('close', () => {
+                if (pendingWishlistPurchaseId !== null) {
+                    pendingWishlistPurchaseId = null;
+                    renderWishlist();
+                }
+            });
+            document.getElementById('wishlist-purchase-form').addEventListener('submit', (event) => {
+                event.preventDefault();
+                const item = state.wishlist.find(entry => entry.id === pendingWishlistPurchaseId);
+                if (!item) {
+                    throw new Error(`Item da Wishlist não encontrado: ${pendingWishlistPurchaseId}`);
+                }
+
+                const paymentMethod = document.querySelector('input[name="wishlist-payment-method"]:checked');
+                const date = document.getElementById('wishlist-purchase-date').value;
+                const description = document.getElementById('wishlist-purchase-description').value.trim();
+                const value = document.getElementById('wishlist-purchase-value').value;
+                if (!paymentMethod || !date || !description || !Number.isFinite(Number(value)) || Number(value) <= 0) {
+                    alert('Preencha os dados da compra corretamente.');
+                    return;
+                }
+
+                if (paymentMethod.value === 'credit') {
+                    const invoice = document.getElementById('wishlist-credit-invoice').value;
+                    const invoiceMonth = document.getElementById('wishlist-credit-month').value;
+                    const installments = Number(document.getElementById('wishlist-credit-installments').value);
+                    if (!invoice || !invoiceMonth || !Number.isInteger(installments) || installments < 1) {
+                        alert('Preencha os dados da fatura e das parcelas.');
+                        return;
+                    }
+                    state.invoices.push({
+                        id: generateId(),
+                        date,
+                        desc: description,
+                        value,
+                        installments,
+                        invoice,
+                        store: document.getElementById('wishlist-credit-store').value.trim(),
+                        invoiceMonth,
+                        paid: false
+                    });
+                } else {
+                    const bank = document.getElementById('wishlist-expense-bank').value;
+                    if (!bank) {
+                        alert('Selecione o banco usado na compra.');
+                        return;
+                    }
+                    const expenseId = generateId();
+                    state.expenses.push({
+                        id: expenseId,
+                        date,
+                        desc: description,
+                        value,
+                        bank,
+                        payTo: '',
+                        type: 'Saída',
+                        paid: true
+                    });
+                    item.expenseId = expenseId;
+                }
+
+                item.status = 'Comprado';
+                item.date = date;
+                pendingWishlistPurchaseId = null;
+                document.getElementById('wishlist-purchase-dialog').close();
+                saveState();
+            });
             document.querySelectorAll('.monthly-profile-option').forEach(button => {
                 button.setAttribute('aria-pressed', String(button.dataset.profile === state.profile));
                 button.addEventListener('click', () => setFinancialProfile(button.dataset.profile));
@@ -1982,21 +2270,25 @@
             document.getElementById('form-wishlist').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const status = document.getElementById('w-cat').value;
+                const id = generateId();
                 state.wishlist.push({
-                    id: generateId(),
+                    id,
                     item: document.getElementById('w-item').value,
                     link: document.getElementById('w-link').value,
                     value: document.getElementById('w-valor').value,
                     freight: document.getElementById('w-frete').value || 0,
-                    status: status,
+                    status: 'Planejando',
                     imgUrl: wishlistImageData,
-                    date: status === 'Comprado' ? new Date().toISOString().split('T')[0] : null
+                    date: null
                 });
                 saveState(); e.target.reset();
                 wishlistImageData = '';
                 wishlistImagePreview.src = '';
                 wishlistImagePreview.hidden = true;
                 wishlistDropPrompt.hidden = false;
+                if (status === 'Comprado') {
+                    updateWishlistStatus(id, status);
+                }
             });
 
             updateProfileOnlyTabs();
