@@ -999,7 +999,7 @@
                     <input type="text" id="f-loja" class="input-pastel">
                 </div>
                 <div id="invoice-pay-to-field" class="flex items-center gap-1" hidden>
-                    <label for="f-pagar" class="w-24 font-bebas text-xl leading-tight">ENVIAR PARA:</label>
+                    <label for="f-pagar" class="w-24 font-bebas text-xl leading-tight">PAGAR PARA:</label>
                     <select id="f-pagar" class="input-pastel" disabled>
                         <option value=""> </option>
                     </select>
@@ -1030,11 +1030,11 @@
                     <table class="tabela-scrap">
                         <thead class="font-bebas">
                             <tr>
-                                <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>FATURA</th><th>LOJA</th><th>AÇÃO</th>
+                                <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>FATURA</th><th>LOJA</th><th>PAGAR PARA</th><th>AÇÃO</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-fatura">
-                            <tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>
+                            <tr><td colspan="9" class="p-0"><div class="linha-listrada"></div></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1042,11 +1042,11 @@
                     <table class="tabela-scrap">
                         <thead class="font-bebas">
                             <tr>
-                                <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>AÇÃO</th>
+                                <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>PAGAR PARA</th><th>AÇÃO</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-fatura-celular">
-                            <tr><td colspan="6" class="p-0"><div class="linha-listrada"></div></td></tr>
+                            <tr><td colspan="7" class="p-0"><div class="linha-listrada"></div></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1509,7 +1509,7 @@
         function getInvoiceOptions() {
             return state.profile === 'lenira'
                 ? ['Shopee', 'Coin']
-                : ['Itaú', 'Shopee', 'Celular'];
+                : ['Itaú', 'Shopee', 'Celular', 'Outros'];
         }
 
         function renderPayToOptions(selectedSelectId = '', selectedValue = '') {
@@ -1574,16 +1574,16 @@
         }
 
         function updateInvoiceStoreVisibility(invoice, storeField, storeInput, payToField, payToInput) {
-            const isCellphoneInvoice = state.profile === 'rebecca' && invoice === 'Celular';
-            storeField.hidden = isCellphoneInvoice;
-            storeField.classList.toggle('hidden', isCellphoneInvoice);
-            storeInput.disabled = isCellphoneInvoice;
+            const usesPayTo = state.profile === 'rebecca' && ['Celular', 'Outros'].includes(invoice);
+            storeField.hidden = usesPayTo;
+            storeField.classList.toggle('hidden', usesPayTo);
+            storeInput.disabled = usesPayTo;
             storeInput.required = false;
-            payToField.hidden = !isCellphoneInvoice;
-            payToField.classList.toggle('hidden', !isCellphoneInvoice);
-            payToInput.disabled = !isCellphoneInvoice;
-            payToInput.required = isCellphoneInvoice;
-            if (isCellphoneInvoice) storeInput.value = '';
+            payToField.hidden = !usesPayTo;
+            payToField.classList.toggle('hidden', !usesPayTo);
+            payToInput.disabled = !usesPayTo;
+            payToInput.required = usesPayTo;
+            if (usesPayTo) storeInput.value = '';
             else payToInput.value = '';
         }
 
@@ -1944,8 +1944,8 @@
                     installmentValue: (baseCents + (installmentNumber <= extraCents ? 1 : 0)) / 100,
                     installments: installmentCount,
                     invoice,
-                    store: state.profile === 'rebecca' && invoice === 'Celular' ? '' : store,
-                    payTo: state.profile === 'rebecca' && invoice === 'Celular' ? payTo || '' : '',
+                    store: state.profile === 'rebecca' && ['Celular', 'Outros'].includes(invoice) ? '' : store,
+                    payTo: state.profile === 'rebecca' && ['Celular', 'Outros'].includes(invoice) ? payTo || '' : '',
                     invoiceMonth: months[(cycleStartDate.getMonth() + index) % months.length],
                     paid: false
                 };
@@ -2288,7 +2288,7 @@
             invoiceTotals.replaceChildren();
             invoiceNames.forEach(invoice => {
                 const total = monthInvoices
-                    .filter(item => (item.invoice || 'Sem fatura') === invoice)
+                    .filter(item => (item.invoice || 'Sem fatura') === invoice && !item.paid)
                     .reduce((sum, item) => sum + getInvoiceInstallmentValue(item), 0);
                 const summary = document.createElement('button');
                 summary.type = 'button';
@@ -2359,6 +2359,7 @@
                     <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}${item.invoiceMonth ? ` - fatura ${item.invoiceMonth}` : ''}</td>
                     <td class="font-bebas text-lg">${instText}</td>
                     <td class="text-center"><input type="checkbox" class="invoice-paid-checkbox" ${item.paid ? 'checked' : ''} aria-label="Marcar compra ${item.desc} como ${item.paid ? 'não paga' : 'paga'}" title="${item.paid ? 'Paga' : 'Não paga'}" onchange="updateInvoicePaid('${item.id}', this.checked)"></td>
+                    <td class="font-bebas text-lg">${item.payTo || ''}</td>
                     <td><button onclick="deleteItem('invoices', '${item.id}')" class="text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition">X</button></td>
                 ` : `
                     <td class="font-bebas text-lg text-center">${formatDateBR(item.date)}</td>
@@ -2368,6 +2369,7 @@
                     <td class="text-center"><input type="checkbox" class="invoice-paid-checkbox" ${item.paid ? 'checked' : ''} aria-label="Marcar compra ${item.desc} como ${item.paid ? 'não paga' : 'paga'}" title="${item.paid ? 'Paga' : 'Não paga'}" onchange="updateInvoicePaid('${item.id}', this.checked)"></td>
                     <td>${getBankLogoHTML(item.invoice) || item.invoice}</td>
                     <td class="font-bebas text-lg">${item.store}</td>
+                    <td class="font-bebas text-lg">${item.payTo || ''}</td>
                     <td><button onclick="deleteItem('invoices', '${item.id}')" class="text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition">X</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -2376,10 +2378,10 @@
             cardInvoices.forEach(item => appendInvoiceRow(cardTbody, item, false));
             cellphoneInvoices.forEach(item => appendInvoiceRow(cellphoneTbody, item, true));
             if (cardInvoices.length === 0) {
-                cardTbody.innerHTML = '<tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>';
+                cardTbody.innerHTML = '<tr><td colspan="9" class="p-0"><div class="linha-listrada"></div></td></tr>';
             }
             if (cellphoneInvoices.length === 0) {
-                cellphoneTbody.innerHTML = '<tr><td colspan="6" class="p-0"><div class="linha-listrada"></div></td></tr>';
+                cellphoneTbody.innerHTML = '<tr><td colspan="7" class="p-0"><div class="linha-listrada"></div></td></tr>';
             }
         }
 
@@ -2416,7 +2418,7 @@
         function reconcileInvoicePaymentExpenses() {
             const invoiceGroups = new Map();
             state.invoices.forEach(item => {
-                if (!item.invoice || !item.invoiceMonth) return;
+                if (!item.invoice || !item.invoiceMonth || item.invoice === 'Outros') return;
                 const invoiceYear = getInvoiceInstallmentDate(item)?.getFullYear() ?? null;
                 const key = JSON.stringify([item.invoice, item.invoiceMonth, invoiceYear]);
                 if (!invoiceGroups.has(key)) {
@@ -2428,9 +2430,42 @@
             const paidGroups = new Map(
                 [...invoiceGroups.entries()].filter(([, group]) => group.items.every(item => item.paid))
             );
+            const paidOtherItems = new Map(
+                state.invoices
+                    .filter(item => item.invoice === 'Outros' && item.paid)
+                    .map(item => [item.id, item])
+            );
             state.expenses = state.expenses.filter(item => (
-                !item.invoicePaymentKey || paidGroups.has(item.invoicePaymentKey)
+                (!item.invoicePaymentKey || paidGroups.has(item.invoicePaymentKey))
+                && (!item.invoiceItemPaymentKey || paidOtherItems.has(item.invoiceItemPaymentKey))
             ));
+
+            paidOtherItems.forEach((invoiceItem, key) => {
+                const matchingExpense = state.expenses.find(item => item.invoiceItemPaymentKey === key);
+                if (matchingExpense) {
+                    matchingExpense.desc = invoiceItem.desc;
+                    matchingExpense.value = getInvoiceInstallmentValue(invoiceItem).toFixed(2);
+                    matchingExpense.bank = 'Outros';
+                    matchingExpense.payTo = invoiceItem.payTo || '';
+                    matchingExpense.type = 'Saída';
+                    matchingExpense.paid = true;
+                    return;
+                }
+
+                const today = new Date();
+                const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                state.expenses.push({
+                    id: generateId(),
+                    date,
+                    desc: invoiceItem.desc,
+                    value: getInvoiceInstallmentValue(invoiceItem).toFixed(2),
+                    bank: 'Outros',
+                    payTo: invoiceItem.payTo || '',
+                    type: 'Saída',
+                    paid: true,
+                    invoiceItemPaymentKey: key
+                });
+            });
 
             paidGroups.forEach((group, key) => {
                 const matchingExpenses = state.expenses.filter(item => item.invoicePaymentKey === key);
