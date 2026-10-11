@@ -867,7 +867,7 @@
                         <!-- OUTUBRO -->
                         <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">OUT</div>
                         <div class="monthly-currency-input">
-                            <input type="text" inputmode="decimal" id="in-out" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" readonly aria-readonly="true">
+                            <input type="text" inputmode="decimal" id="in-out" class="input-pastel font-gliker text-center text-xl" placeholder="R$ 0,00" readonly aria-readonly="true">
                         </div>
                         <div class="valor-box font-gliker" id="out-out">R$ 0,00</div>
                         <div class="valor-box font-gliker" id="balance-out">R$ 0,00</div>
@@ -875,7 +875,7 @@
                         <!-- NOVEMBRO -->
                         <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">NOV</div>
                         <div class="monthly-currency-input">
-                            <input type="text" inputmode="decimal" id="in-nov" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" readonly aria-readonly="true">
+                            <input type="text" inputmode="decimal" id="in-nov" class="input-pastel font-gliker text-center text-xl" placeholder="R$ 0,00" readonly aria-readonly="true">
                         </div>
                         <div class="valor-box font-gliker" id="out-nov">R$ 0,00</div>
                         <div class="valor-box font-gliker" id="balance-nov">R$ 0,00</div>
@@ -883,7 +883,7 @@
                         <!-- DEZEMBRO -->
                         <div class="mes-label flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdf79] text-center font-intro text-[var(--texto-marrom)]">DEZ</div>
                         <div class="monthly-currency-input">
-                            <input type="text" inputmode="decimal" id="in-dez" class="input-pastel font-gliker text-center text-xl" placeholder="0,00" readonly aria-readonly="true">
+                            <input type="text" inputmode="decimal" id="in-dez" class="input-pastel font-gliker text-center text-xl" placeholder="R$ 0,00" readonly aria-readonly="true">
                         </div>
                         <div class="valor-box font-gliker" id="out-dez">R$ 0,00</div>
                         <div class="valor-box font-gliker" id="balance-dez">R$ 0,00</div>
@@ -920,7 +920,7 @@
                 <div class="flex flex-col gap-3">
                     <div class="expense-value-field">
                         <label class="w-24 font-bebas text-xl">VALOR:</label>
-                        <input type="text" inputmode="decimal" id="g-valor" required class="input-pastel font-gliker" placeholder="0,00">
+                        <input type="text" inputmode="decimal" id="g-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00">
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="w-24 font-bebas text-xl">TIPO:</span>
@@ -1063,7 +1063,7 @@
             <form id="form-economia">
                 <div class="economy-field-row">
                     <label for="e-valor" class="economy-field-label">VALOR:</label>
-                    <input type="text" inputmode="decimal" id="e-valor" required class="input-pastel font-gliker" placeholder="0,00" title="Valores negativos representam retiradas da economia.">
+                    <input type="text" inputmode="decimal" id="e-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00" title="Valores negativos representam retiradas da economia.">
                     <button type="submit" class="font-bebas btn-action" aria-label="Guardar Valor" title="Guardar Valor">୨ৎ</button>
                 </div>
                 <div class="economy-field-row">
@@ -1102,7 +1102,7 @@
                 </div>
                 <div class="wishlist-field">
                     <label class="font-bebas text-xl">VALOR:</label>
-                    <input type="text" inputmode="decimal" id="w-valor" required class="input-pastel font-gliker" placeholder="0,00">
+                    <input type="text" inputmode="decimal" id="w-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00">
                 </div>
                 <div class="wishlist-field">
                     <label class="font-bebas text-xl">STATUS:</label>
@@ -1113,7 +1113,7 @@
                 </div>
                 <div class="wishlist-field wishlist-freight-field">
                     <label for="w-frete" class="font-bebas text-xl">FRETE:</label>
-                    <input type="text" inputmode="decimal" id="w-frete" class="input-pastel font-gliker" placeholder="0,00">
+                    <input type="text" inputmode="decimal" id="w-frete" class="input-pastel font-gliker" placeholder="R$ 0,00">
                 </div>
                 <div class="wishlist-image-field">
                     <label for="w-img-file" class="wishlist-dropzone" id="wishlist-dropzone">
@@ -1212,7 +1212,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <label for="wishlist-purchase-value" class="w-24 font-bebas text-lg">VALOR:</label>
-                    <input type="text" inputmode="decimal" id="wishlist-purchase-value" class="input-pastel" required>
+                    <input type="text" inputmode="decimal" id="wishlist-purchase-value" class="input-pastel font-gliker" placeholder="R$ 0,00" required>
                 </div>
                 <fieldset id="wishlist-credit-fields" class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0" disabled hidden>
                     <div class="flex items-center gap-2">
@@ -1609,6 +1609,12 @@
             return { date: todayString, cycleStartDate: getInvoiceCycleStartDate(todayString) };
         }
 
+        function getInvoiceInstallmentBaseDate(item) {
+            return state.profile === 'rebecca'
+                ? item.installmentBaseDate || item.invoiceStartDate || item.date
+                : item.invoiceStartDate || item.date;
+        }
+
         function setDefaultInvoiceMonthFilter() {
             const invoiceMonths = [
                 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -1624,7 +1630,7 @@
         }
 
         function getInvoiceInstallmentDate(item) {
-            const cycleStartDate = getInvoiceCycleStartDate(item.invoiceStartDate || item.date);
+            const cycleStartDate = getInvoiceCycleStartDate(getInvoiceInstallmentBaseDate(item));
             if (!cycleStartDate) return null;
 
             const installmentNumber = Number(item.installmentNumber);
@@ -1790,31 +1796,41 @@
             ];
             const selectedInvoiceMonth = months.indexOf(invoiceMonth);
             const cycleStartDate = getInvoiceCycleStartDate(invoiceStartDate || date);
+            const purchaseCycleStartDate = getInvoiceCycleStartDate(date);
             if (!Number.isFinite(totalValue) || !Number.isFinite(totalCents) || totalCents <= 0
                 || !Number.isInteger(installmentCount) || installmentCount < 1
-                || selectedInvoiceMonth < 0 || !cycleStartDate) {
+                || selectedInvoiceMonth < 0 || !cycleStartDate || !purchaseCycleStartDate) {
                 throw new Error('Dados inválidos para gerar as parcelas da fatura.');
             }
 
+            const skippedInstallments = state.profile === 'rebecca' && invoiceStartDate
+                ? Math.max(0, (cycleStartDate.getFullYear() - purchaseCycleStartDate.getFullYear()) * 12
+                    + cycleStartDate.getMonth() - purchaseCycleStartDate.getMonth())
+                : 0;
+            const remainingInstallments = installmentCount - skippedInstallments;
             const baseCents = Math.floor(totalCents / installmentCount);
             const extraCents = totalCents % installmentCount;
             const installmentGroupId = generateId();
-            return Array.from({ length: installmentCount }, (_, index) => ({
-                id: generateId(),
-                installmentGroupId,
-                installmentNumber: index + 1,
-                date,
-                ...(invoiceStartDate ? { invoiceStartDate } : {}),
-                desc,
-                value: String(totalValue),
-                installmentValue: (baseCents + (index < extraCents ? 1 : 0)) / 100,
-                installments: installmentCount,
-                invoice,
-                store: state.profile === 'rebecca' && invoice === 'Celular' ? '' : store,
-                payTo: state.profile === 'rebecca' && invoice === 'Celular' ? payTo || '' : '',
-                invoiceMonth: months[(cycleStartDate.getMonth() + index) % months.length],
-                paid: false
-            }));
+            return Array.from({ length: Math.max(0, remainingInstallments) }, (_, index) => {
+                const installmentNumber = skippedInstallments + index + 1;
+                return {
+                    id: generateId(),
+                    installmentGroupId,
+                    installmentNumber,
+                    date,
+                    ...(state.profile === 'rebecca' && invoiceStartDate ? { installmentBaseDate: date } : {}),
+                    ...(invoiceStartDate ? { invoiceStartDate } : {}),
+                    desc,
+                    value: String(totalValue),
+                    installmentValue: (baseCents + (installmentNumber <= extraCents ? 1 : 0)) / 100,
+                    installments: installmentCount,
+                    invoice,
+                    store: state.profile === 'rebecca' && invoice === 'Celular' ? '' : store,
+                    payTo: state.profile === 'rebecca' && invoice === 'Celular' ? payTo || '' : '',
+                    invoiceMonth: months[(cycleStartDate.getMonth() + index) % months.length],
+                    paid: false
+                };
+            });
         }
 
         function getEconomyBanks() {
@@ -2209,7 +2225,7 @@
             const appendInvoiceRow = (tbody, item, isCellphone) => {
                 const valParcela = getInvoiceInstallmentValue(item);
                 const invoiceDate = getInvoiceInstallmentDate(item);
-                const cycleStartDate = getInvoiceCycleStartDate(item.invoiceStartDate || item.date);
+                const cycleStartDate = getInvoiceCycleStartDate(getInvoiceInstallmentBaseDate(item));
                 const invoiceOffset = invoiceDate
                     ? ((invoiceDate.getFullYear() - cycleStartDate.getFullYear()) * 12
                         + invoiceDate.getMonth() - cycleStartDate.getMonth())
@@ -2265,7 +2281,7 @@
                 if (!item.installmentGroupId
                     || !Number.isInteger(Number(item.installmentNumber))
                     || Number(item.installmentNumber) < 1) return;
-                const cycleStartDate = getInvoiceCycleStartDate(item.invoiceStartDate || item.date);
+                const cycleStartDate = getInvoiceCycleStartDate(getInvoiceInstallmentBaseDate(item));
                 if (!cycleStartDate) return;
                 const expectedMonth = months[
                     (cycleStartDate.getMonth() + Number(item.installmentNumber) - 1) % months.length
@@ -2677,7 +2693,7 @@
                     'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
                     'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
                 ];
-                state.invoices = state.invoices.concat(createInvoiceInstallments({
+                const installments = createInvoiceInstallments({
                     date: invoiceDate,
                     desc: document.getElementById('f-desc').value,
                     value: parseCurrencyValue(document.getElementById('f-valor').value),
@@ -2687,7 +2703,12 @@
                     payTo: document.getElementById('f-pagar').value,
                     invoiceMonth: invoiceMonths[currentInvoiceDate.cycleStartDate.getMonth()],
                     invoiceStartDate: currentInvoiceDate.date
-                }));
+                });
+                if (installments.length === 0) {
+                    alert('Todas as parcelas desta compra já venceram.');
+                    return;
+                }
+                state.invoices = state.invoices.concat(installments);
                 document.getElementById('form-fatura').reset();
                 updateInvoiceFormFields('');
                 saveState();
