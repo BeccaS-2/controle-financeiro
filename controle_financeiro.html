@@ -248,7 +248,7 @@
             color: var(--texto-marrom);
             cursor: pointer;
             font: inherit;
-            text-align: left;
+            text-align: center;
         }
         .invoice-summary[aria-pressed="true"] {
             background: var(--azul-pastel);
@@ -616,10 +616,11 @@
             font-size: 1.2rem;
             font-weight: 700;
             letter-spacing: 0.02em;
-            width: 5ch;
+            flex: 1;
+            width: 100%;
             min-width: 0;
             padding: 0;
-            text-align: left;
+            text-align: center;
             background: transparent;
             border: 0;
             box-shadow: none;
@@ -640,24 +641,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.2rem;
             width: 100%;
             min-width: 0;
-            padding: 0.5rem 0.75rem;
+            padding: 0.5rem 1rem;
             box-sizing: border-box;
             background-color: #f4f8f9;
             border-radius: 999px;
-        }
-        .monthly-currency-input::before {
-            content: 'R$';
-            color: var(--texto-marrom);
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            pointer-events: none;
-            line-height: 1;
-            flex: none;
         }
         .valor-box {
             background-color: var(--amarelo-pastel);
@@ -917,7 +906,7 @@
             <form id="form-gasto" class="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6">
                 <div class="expense-date-field">
                     <label class="w-24 font-bebas text-xl">DATA:</label>
-                    <input type="text" id="g-data" required inputmode="numeric" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" placeholder="dd/mm/aaaa" class="input-pastel">
+                    <input type="text" id="g-data" required inputmode="numeric" maxlength="5" pattern="[0-9]{2}/[0-9]{2}" placeholder="dd/mm" class="input-pastel">
                 </div>
                 <div class="flex items-center gap-2">
                     <label class="w-24 font-bebas text-xl">DESCRIÇÃO:</label>
@@ -931,7 +920,7 @@
                 <div class="flex flex-col gap-3">
                     <div class="expense-value-field">
                         <label class="w-24 font-bebas text-xl">VALOR:</label>
-                        <input type="number" step="0.01" id="g-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00">
+                        <input type="text" inputmode="decimal" id="g-valor" required class="input-pastel font-gliker" placeholder="0,00">
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="w-24 font-bebas text-xl">TIPO:</span>
@@ -963,16 +952,6 @@
                 <div class="mb-2 flex justify-end">
                     <label for="expense-month-filter" class="sr-only">Filtrar gastos por mês</label>
                     <select id="expense-month-filter" class="input-pastel invoice-table-filter" aria-label="Filtrar gastos por mês">
-                        <option value="all">Todos os meses</option>
-                        <option value="01">Janeiro</option>
-                        <option value="02">Fevereiro</option>
-                        <option value="03">Março</option>
-                        <option value="04">Abril</option>
-                        <option value="05">Maio</option>
-                        <option value="06">Junho</option>
-                        <option value="07">Julho</option>
-                        <option value="08">Agosto</option>
-                        <option value="09">Setembro</option>
                         <option value="10">Outubro</option>
                         <option value="11">Novembro</option>
                         <option value="12">Dezembro</option>
@@ -1001,7 +980,7 @@
             <form id="form-fatura" class="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
                 <div class="flex items-center gap-1">
                     <label class="w-16 font-bebas text-xl">DATA:</label>
-                    <input type="text" id="f-data" required inputmode="numeric" maxlength="10" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" placeholder="dd/mm/aaaa" class="input-pastel">
+                    <input type="text" id="f-data" required inputmode="numeric" maxlength="5" pattern="[0-9]{2}/[0-9]{2}" placeholder="dd/mm" class="input-pastel">
                 </div>
                 <div class="flex items-center gap-1">
                     <label class="w-20 font-bebas text-xl">DESCRIÇÃO:</label>
@@ -1014,7 +993,7 @@
                 </div>
                 <div class="flex items-center gap-1">
                     <label class="w-20 whitespace-nowrap font-bebas text-lg">VALOR:</label>
-                    <input type="number" step="0.01" id="f-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00">
+                    <input type="text" inputmode="decimal" id="f-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00">
                 </div>
                 <div class="flex items-center gap-1">
                     <label class="w-20 font-bebas text-xl">PARCELAS:</label>
@@ -1047,16 +1026,6 @@
                     <div class="flex flex-wrap items-center justify-end gap-3">
                         <label for="invoice-month-filter" class="sr-only">Filtrar compras por mês da fatura</label>
                         <select id="invoice-month-filter" class="input-pastel invoice-table-filter" aria-label="Filtrar por mês da fatura">
-                            <option value="all">Todos os meses</option>
-                            <option value="janeiro">Janeiro</option>
-                            <option value="fevereiro">Fevereiro</option>
-                            <option value="março">Março</option>
-                            <option value="abril">Abril</option>
-                            <option value="maio">Maio</option>
-                            <option value="junho">Junho</option>
-                            <option value="julho">Julho</option>
-                            <option value="agosto">Agosto</option>
-                            <option value="setembro">Setembro</option>
                             <option value="outubro">Outubro</option>
                             <option value="novembro">Novembro</option>
                             <option value="dezembro">Dezembro</option>
@@ -1104,7 +1073,7 @@
             <form id="form-economia">
                 <div class="economy-field-row">
                     <label for="e-valor" class="economy-field-label">VALOR:</label>
-                    <input type="number" step="0.01" id="e-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00" title="Valores negativos representam retiradas da economia.">
+                    <input type="text" inputmode="decimal" id="e-valor" required class="input-pastel font-gliker" placeholder="0,00" title="Valores negativos representam retiradas da economia.">
                     <button type="submit" class="font-bebas btn-action" aria-label="Guardar Valor" title="Guardar Valor">୨ৎ</button>
                 </div>
                 <div class="economy-field-row">
@@ -1143,7 +1112,7 @@
                 </div>
                 <div class="wishlist-field">
                     <label class="font-bebas text-xl">VALOR:</label>
-                    <input type="number" step="0.01" id="w-valor" required class="input-pastel font-gliker" placeholder="R$ 0,00">
+                    <input type="text" inputmode="decimal" id="w-valor" required class="input-pastel font-gliker" placeholder="0,00">
                 </div>
                 <div class="wishlist-field">
                     <label class="font-bebas text-xl">STATUS:</label>
@@ -1154,7 +1123,7 @@
                 </div>
                 <div class="wishlist-field wishlist-freight-field">
                     <label for="w-frete" class="font-bebas text-xl">FRETE:</label>
-                    <input type="number" step="0.01" min="0" id="w-frete" class="input-pastel font-gliker" placeholder="R$ 0,00">
+                    <input type="text" inputmode="decimal" id="w-frete" class="input-pastel font-gliker" placeholder="0,00">
                 </div>
                 <div class="wishlist-image-field">
                     <label for="w-img-file" class="wishlist-dropzone" id="wishlist-dropzone">
@@ -1245,7 +1214,7 @@
                 </fieldset>
                 <div class="flex items-center gap-2">
                     <label for="wishlist-purchase-date" class="w-24 font-bebas text-lg">DATA:</label>
-                    <input type="date" id="wishlist-purchase-date" class="input-pastel" required>
+                    <input type="text" id="wishlist-purchase-date" inputmode="numeric" maxlength="5" pattern="[0-9]{2}/[0-9]{2}" placeholder="dd/mm" class="input-pastel" required>
                 </div>
                 <div class="flex items-center gap-2">
                     <label for="wishlist-purchase-description" class="w-24 font-bebas text-lg">DESCRIÇÃO:</label>
@@ -1253,7 +1222,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <label for="wishlist-purchase-value" class="w-24 font-bebas text-lg">VALOR:</label>
-                    <input type="number" id="wishlist-purchase-value" min="0.01" step="0.01" class="input-pastel" required>
+                    <input type="text" inputmode="decimal" id="wishlist-purchase-value" class="input-pastel" required>
                 </div>
                 <fieldset id="wishlist-credit-fields" class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0" disabled hidden>
                     <div class="flex items-center gap-2">
@@ -1312,32 +1281,6 @@
         </dialog>
 
     </main>
-
-    <dialog id="invoice-month-dialog" aria-labelledby="invoice-month-title">
-        <form id="invoice-month-form" class="invoice-month-dialog-content">
-            <h2 id="invoice-month-title" class="font-horizon text-2xl text-[var(--azul-escuro)]">MÊS DA FATURA</h2>
-            <label for="f-mes-fatura" class="font-bebas text-xl">DE QUAL MÊS É ESTA FATURA?</label>
-            <select id="f-mes-fatura" required class="input-pastel">
-                <option value="" selected disabled>Selecione o mês</option>
-                <option value="janeiro">Janeiro</option>
-                <option value="fevereiro">Fevereiro</option>
-                <option value="março">Março</option>
-                <option value="abril">Abril</option>
-                <option value="maio">Maio</option>
-                <option value="junho">Junho</option>
-                <option value="julho">Julho</option>
-                <option value="agosto">Agosto</option>
-                <option value="setembro">Setembro</option>
-                <option value="outubro">Outubro</option>
-                <option value="novembro">Novembro</option>
-                <option value="dezembro">Dezembro</option>
-            </select>
-            <div class="invoice-month-dialog-actions font-bebas text-lg">
-                <button type="button" id="cancel-invoice-month">CANCELAR</button>
-                <button type="submit">CONTINUAR</button>
-            </div>
-        </form>
-    </dialog>
 
     <script>
         // Estrutura Base de Dados
@@ -1421,10 +1364,7 @@
         // --- Persistência de Dados (localStorage) ---
         function formatIncomeInput(value) {
             if (value === '' || value === null || value === undefined) return '';
-            return Number(value).toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            return formatCurrency(value);
         }
 
         function getActiveProfileData() {
@@ -1489,10 +1429,11 @@
         }
 
         function parseDateBR(dateString) {
-            const match = /^([0-9]{2})\/([0-9]{2})\/([0-9]{4})$/.exec(String(dateString).trim());
+            const match = /^([0-9]{2})\/([0-9]{2})$/.exec(String(dateString).trim());
             if (!match) return '';
 
-            const [, day, month, year] = match;
+            const [, day, month] = match;
+            const year = '2026';
             const parsedDate = new Date(Number(year), Number(month) - 1, Number(day));
             if (parsedDate.getFullYear() !== Number(year) || parsedDate.getMonth() !== Number(month) - 1 || parsedDate.getDate() !== Number(day)) {
                 return '';
@@ -1503,10 +1444,8 @@
 
         function applyBrazilianDateMask(input) {
             input.addEventListener('input', () => {
-                const digits = input.value.replace(/\D/g, '').slice(0, 8);
-                if (digits.length > 4) {
-                    input.value = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-                } else if (digits.length > 2) {
+                const digits = input.value.replace(/\D/g, '').slice(0, 4);
+                if (digits.length > 2) {
                     input.value = `${digits.slice(0, 2)}/${digits.slice(2)}`;
                 } else {
                     input.value = digits;
@@ -1648,16 +1587,102 @@
             return new Date(year, month - 1 + cycleOffset + invoiceOffset, 1);
         }
 
-        function createInvoiceInstallments({ date, desc, value, installments, invoice, store, payTo, invoiceMonth }) {
+        function getCurrentInvoiceDate() {
+            const today = new Date();
+            const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            return { date: todayString, cycleStartDate: getInvoiceCycleStartDate(todayString) };
+        }
+
+        function setDefaultInvoiceMonthFilter() {
+            const invoiceMonths = [
+                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+            ];
+            const currentInvoiceDate = getCurrentInvoiceDate();
+            const currentInvoiceMonth = invoiceMonths[currentInvoiceDate.cycleStartDate.getMonth()];
+            document.getElementById('invoice-month-filter').value = (
+                ['outubro', 'novembro', 'dezembro'].includes(currentInvoiceMonth)
+                    ? currentInvoiceMonth
+                    : 'outubro'
+            );
+        }
+
+        function getInvoiceInstallmentDate(item) {
+            const cycleStartDate = getInvoiceCycleStartDate(item.invoiceStartDate || item.date);
+            if (!cycleStartDate) return null;
+
+            const installmentNumber = Number(item.installmentNumber);
+            if (Number.isInteger(installmentNumber) && installmentNumber >= 1) {
+                return new Date(
+                    cycleStartDate.getFullYear(),
+                    cycleStartDate.getMonth() + installmentNumber - 1,
+                    1
+                );
+            }
+
+            const months = [
+                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+            ];
+            const invoiceMonthIndex = months.indexOf(item.invoiceMonth);
+            if (invoiceMonthIndex < 0) return null;
+
+            let invoiceDate = new Date(cycleStartDate.getFullYear(), invoiceMonthIndex, 1);
+            if (invoiceDate < cycleStartDate) {
+                invoiceDate = new Date(invoiceDate.getFullYear() + 1, invoiceMonthIndex, 1);
+            }
+            return invoiceDate;
+        }
+
+        function parseCurrencyValue(value) {
+            const rawValue = String(value).trim().replace(/[^\d,.-]/g, '');
+            const normalizedValue = rawValue
+                .replace(/\.(?=.*[,])/g, '')
+                .replace(',', '.');
+            return Number(normalizedValue);
+        }
+
+        function formatCurrencyInput(value) {
+            const text = String(value);
+            const isNegative = text.startsWith('-');
+            const digits = text.replace(/\D/g, '');
+            if (!digits) return isNegative ? '-' : '';
+
+            const cents = digits.slice(-2).padStart(2, '0');
+            const whole = digits.slice(0, -2) || '0';
+            const formattedWhole = Number(whole).toLocaleString('pt-BR');
+            return `${isNegative ? '-' : ''}${formattedWhole},${cents}`;
+        }
+
+        function applyCurrencyInputMask(input, allowNegative = false) {
+            input.addEventListener('input', () => {
+                const cursor = input.selectionStart ?? input.value.length;
+                const digitsBeforeCursor = input.value.slice(0, cursor).replace(/\D/g, '').length;
+                const negativePrefix = allowNegative && input.value.trimStart().startsWith('-') ? '-' : '';
+                const formatted = formatCurrencyInput(`${negativePrefix}${input.value}`);
+                input.value = formatted;
+
+                let nextCursor = 0;
+                let digitsSeen = 0;
+                while (nextCursor < formatted.length && digitsSeen < digitsBeforeCursor) {
+                    if (/\d/.test(formatted[nextCursor])) digitsSeen++;
+                    nextCursor++;
+                }
+                input.setSelectionRange(nextCursor, nextCursor);
+            });
+        }
+
+        function createInvoiceInstallments({ date, desc, value, installments, invoice, store, payTo, invoiceMonth, invoiceStartDate }) {
             const installmentCount = Number(installments);
-            const totalCents = Math.round(Number(value) * 100);
+            const totalValue = parseCurrencyValue(value);
+            const totalCents = Math.round(totalValue * 100);
             const months = [
                 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
                 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
             ];
             const selectedInvoiceMonth = months.indexOf(invoiceMonth);
-            const cycleStartDate = getInvoiceCycleStartDate(date);
-            if (!Number.isFinite(totalCents) || totalCents <= 0
+            const cycleStartDate = getInvoiceCycleStartDate(invoiceStartDate || date);
+            if (!Number.isFinite(totalValue) || !Number.isFinite(totalCents) || totalCents <= 0
                 || !Number.isInteger(installmentCount) || installmentCount < 1
                 || selectedInvoiceMonth < 0 || !cycleStartDate) {
                 throw new Error('Dados inválidos para gerar as parcelas da fatura.');
@@ -1671,8 +1696,9 @@
                 installmentGroupId,
                 installmentNumber: index + 1,
                 date,
+                ...(invoiceStartDate ? { invoiceStartDate } : {}),
                 desc,
-                value: String(value),
+                value: String(totalValue),
                 installmentValue: (baseCents + (index < extraCents ? 1 : 0)) / 100,
                 installments: installmentCount,
                 invoice,
@@ -1765,6 +1791,7 @@
             state.profile = profile;
             activeInvoiceFilter = 'all';
             loadProfileData(profile);
+            setDefaultInvoiceMonthFilter();
             updateExpenseMonthFilterLabels();
             document.querySelectorAll('.monthly-profile-option').forEach(button => {
                 button.setAttribute('aria-pressed', String(button.dataset.profile === profile));
@@ -1928,7 +1955,7 @@
             const selectedMonth = document.getElementById('expense-month-filter').value;
             
             const sorted = [...state.expenses]
-                .filter(item => selectedMonth === 'all' || String(getCycleMonthNumber(item.date)).padStart(2, '0') === selectedMonth)
+                .filter(item => String(getCycleMonthNumber(item.date)).padStart(2, '0') === selectedMonth)
                 .sort((a,b) => new Date(b.date) - new Date(a.date));
 
             sorted.forEach(item => {
@@ -1949,8 +1976,9 @@
         }
 
         function openWishlistPurchaseDialog(item) {
-            const today = new Date().toISOString().split('T')[0];
-            const total = Number(item.value || 0) + Number(item.freight || 0);
+            const today = new Date();
+            const todayDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}`;
+            const total = parseCurrencyValue(item.value || 0) + parseCurrencyValue(item.freight || 0);
             const form = document.getElementById('wishlist-purchase-form');
             form.reset();
             document.getElementById('wishlist-credit-fields').disabled = true;
@@ -1966,9 +1994,9 @@
             expenseBank.replaceChildren(new Option('Selecione o banco', ''));
             getExpenseBankOptions().forEach(bank => expenseBank.add(new Option(bank.name, bank.name)));
             form.dataset.itemId = item.id;
-            document.getElementById('wishlist-purchase-date').value = today;
+            document.getElementById('wishlist-purchase-date').value = todayDate;
             document.getElementById('wishlist-purchase-description').value = item.item;
-            document.getElementById('wishlist-purchase-value').value = total.toFixed(2);
+            document.getElementById('wishlist-purchase-value').value = formatCurrencyInput(total.toFixed(2));
             document.getElementById('wishlist-credit-store').value = item.store || '';
             updateInvoiceStoreVisibility(
                 document.getElementById('wishlist-credit-invoice').value,
@@ -2002,11 +2030,11 @@
 
             const selectedMonth = document.getElementById('invoice-month-filter').value;
             const monthInvoices = state.invoices
-                .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth);
-            const invoiceNames = [...new Set([
-                ...getInvoiceOptions(),
-                ...state.invoices.map(item => item.invoice || 'Sem fatura')
-            ])];
+                .filter(item => (
+                    item.invoiceMonth === selectedMonth
+                    && getInvoiceInstallmentDate(item)?.getFullYear() !== 2027
+                ));
+            const invoiceNames = [...new Set(monthInvoices.map(item => item.invoice || 'Sem fatura'))];
             const invoiceTotals = document.getElementById('invoice-totals');
             invoiceTotals.replaceChildren();
             invoiceNames.forEach(invoice => {
@@ -2066,18 +2094,8 @@
 
             const appendInvoiceRow = (tbody, item, isCellphone) => {
                 const valParcela = getInvoiceInstallmentValue(item);
-                const invoiceMonths = [
-                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-                ];
-                const invoiceMonthIndex = invoiceMonths.indexOf(item.invoiceMonth);
-                const cycleStartDate = getInvoiceCycleStartDate(item.date);
-                let invoiceDate = cycleStartDate && invoiceMonthIndex >= 0
-                    ? new Date(cycleStartDate.getFullYear(), invoiceMonthIndex, 1)
-                    : null;
-                if (invoiceDate && invoiceDate < cycleStartDate) {
-                    invoiceDate = new Date(invoiceDate.getFullYear() + 1, invoiceMonthIndex, 1);
-                }
+                const invoiceDate = getInvoiceInstallmentDate(item);
+                const cycleStartDate = getInvoiceCycleStartDate(item.invoiceStartDate || item.date);
                 const invoiceOffset = invoiceDate
                     ? ((invoiceDate.getFullYear() - cycleStartDate.getFullYear()) * 12
                         + invoiceDate.getMonth() - cycleStartDate.getMonth())
@@ -2133,7 +2151,7 @@
                 if (!item.installmentGroupId
                     || !Number.isInteger(Number(item.installmentNumber))
                     || Number(item.installmentNumber) < 1) return;
-                const cycleStartDate = getInvoiceCycleStartDate(item.date);
+                const cycleStartDate = getInvoiceCycleStartDate(item.invoiceStartDate || item.date);
                 if (!cycleStartDate) return;
                 const expectedMonth = months[
                     (cycleStartDate.getMonth() + Number(item.installmentNumber) - 1) % months.length
@@ -2150,7 +2168,8 @@
             const invoiceGroups = new Map();
             state.invoices.forEach(item => {
                 if (!item.invoice || !item.invoiceMonth) return;
-                const key = JSON.stringify([item.invoice, item.invoiceMonth]);
+                const invoiceYear = getInvoiceInstallmentDate(item)?.getFullYear() ?? null;
+                const key = JSON.stringify([item.invoice, item.invoiceMonth, invoiceYear]);
                 if (!invoiceGroups.has(key)) {
                     invoiceGroups.set(key, { invoice: item.invoice, month: item.invoiceMonth, items: [] });
                 }
@@ -2206,7 +2225,8 @@
             const selectedMonth = document.getElementById('invoice-month-filter').value;
             state.invoices
                 .filter(item => (
-                    (selectedMonth === 'all' || item.invoiceMonth === selectedMonth)
+                    item.invoiceMonth === selectedMonth
+                    && getInvoiceInstallmentDate(item)?.getFullYear() !== 2027
                     && (activeInvoiceFilter === 'all' || (item.invoice || 'Sem fatura') === activeInvoiceFilter)
                 ))
                 .forEach(item => {
@@ -2299,6 +2319,7 @@
             renderExpenseBankOptions();
             renderInvoiceOptions();
             renderEconomyBanks();
+            setDefaultInvoiceMonthFilter();
             document.getElementById('expense-month-filter').addEventListener('change', renderExpenses);
             document.getElementById('invoice-month-filter').addEventListener('change', renderInvoices);
             document.getElementById('wishlist-credit-invoice').addEventListener('change', (event) => {
@@ -2341,10 +2362,10 @@
                 }
 
                 const paymentMethod = document.querySelector('input[name="wishlist-payment-method"]:checked');
-                const date = document.getElementById('wishlist-purchase-date').value;
+                const date = parseDateBR(document.getElementById('wishlist-purchase-date').value);
                 const description = document.getElementById('wishlist-purchase-description').value.trim();
-                const value = document.getElementById('wishlist-purchase-value').value;
-                if (!paymentMethod || !date || !description || !Number.isFinite(Number(value)) || Number(value) <= 0) {
+                const value = parseCurrencyValue(document.getElementById('wishlist-purchase-value').value);
+                if (!paymentMethod || !date || !description || !Number.isFinite(value) || value <= 0) {
                     alert('Preencha os dados da compra corretamente.');
                     return;
                 }
@@ -2488,13 +2509,20 @@
             const expenseDateInput = document.getElementById('g-data');
             applyBrazilianDateMask(expenseDateInput);
             applyBrazilianDateMask(document.getElementById('f-data'));
+            applyBrazilianDateMask(document.getElementById('wishlist-purchase-date'));
+            applyCurrencyInputMask(document.getElementById('g-valor'));
+            applyCurrencyInputMask(document.getElementById('f-valor'));
+            applyCurrencyInputMask(document.getElementById('e-valor'), true);
+            applyCurrencyInputMask(document.getElementById('w-valor'));
+            applyCurrencyInputMask(document.getElementById('w-frete'));
+            applyCurrencyInputMask(document.getElementById('wishlist-purchase-value'));
 
             // Submits
             document.getElementById('form-gasto').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const expenseDate = parseDateBR(expenseDateInput.value);
                 if (!expenseDate) {
-                    alert('Digite uma data válida no formato dd/mm/aaaa.');
+                    alert('Digite uma data válida no formato dd/mm.');
                     expenseDateInput.focus();
                     return;
                 }
@@ -2504,7 +2532,7 @@
                     id: generateId(),
                     date: expenseDate,
                     desc: document.getElementById('g-desc').value,
-                    value: document.getElementById('g-valor').value,
+                    value: parseCurrencyValue(document.getElementById('g-valor').value),
                     bank: banco ? banco.value : '',
                     payTo: document.getElementById('g-pagar').value,
                     type: tipo ? tipo.value : 'Saída',
@@ -2517,24 +2545,7 @@
                 e.preventDefault();
                 const invoiceDate = parseDateBR(document.getElementById('f-data').value);
                 if (!invoiceDate) {
-                    alert('Digite uma data válida no formato dd/mm/aaaa.');
-                    document.getElementById('f-data').focus();
-                    return;
-                }
-                document.getElementById('f-mes-fatura').value = '';
-                document.getElementById('invoice-month-dialog').showModal();
-            });
-
-            document.getElementById('cancel-invoice-month').addEventListener('click', () => {
-                document.getElementById('invoice-month-dialog').close();
-            });
-
-            document.getElementById('invoice-month-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const invoiceDate = parseDateBR(document.getElementById('f-data').value);
-                if (!invoiceDate) {
-                    document.getElementById('invoice-month-dialog').close();
-                    alert('Digite uma data válida no formato dd/mm/aaaa.');
+                    alert('Digite uma data válida no formato dd/mm.');
                     document.getElementById('f-data').focus();
                     return;
                 }
@@ -2543,17 +2554,22 @@
                     alert('Selecione a fatura usada na compra.');
                     return;
                 }
+                const currentInvoiceDate = getCurrentInvoiceDate();
+                const invoiceMonths = [
+                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+                ];
                 state.invoices = state.invoices.concat(createInvoiceInstallments({
                     date: invoiceDate,
                     desc: document.getElementById('f-desc').value,
-                    value: document.getElementById('f-valor').value,
+                    value: parseCurrencyValue(document.getElementById('f-valor').value),
                     installments: document.getElementById('f-parcelas').value,
                     invoice: fatura.value,
                     store: document.getElementById('f-loja').value.trim(),
                     payTo: document.getElementById('f-pagar').value,
-                    invoiceMonth: document.getElementById('f-mes-fatura').value
+                    invoiceMonth: invoiceMonths[currentInvoiceDate.cycleStartDate.getMonth()],
+                    invoiceStartDate: currentInvoiceDate.date
                 }));
-                document.getElementById('invoice-month-dialog').close();
                 document.getElementById('form-fatura').reset();
                 updateInvoiceFormFields('');
                 saveState();
@@ -2565,7 +2581,7 @@
                 state.savings.push({
                     id: generateId(),
                     date: new Date().toISOString().split('T')[0], // Data de hoje
-                    value: document.getElementById('e-valor').value,
+                    value: parseCurrencyValue(document.getElementById('e-valor').value),
                     bank: banco ? banco.value : ''
                 });
                 saveState(); e.target.reset();
@@ -2574,13 +2590,20 @@
             document.getElementById('form-wishlist').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const status = document.getElementById('w-cat').value;
+                const value = parseCurrencyValue(document.getElementById('w-valor').value);
+                const freightInput = document.getElementById('w-frete').value;
+                const freight = parseCurrencyValue(freightInput || '0');
+                if (!Number.isFinite(value) || value <= 0 || !Number.isFinite(freight) || freight < 0) {
+                    alert('Informe valores válidos para o item e o frete.');
+                    return;
+                }
                 const id = generateId();
                 state.wishlist.push({
                     id,
                     item: document.getElementById('w-item').value,
                     link: document.getElementById('w-link').value,
-                    value: document.getElementById('w-valor').value,
-                    freight: document.getElementById('w-frete').value || 0,
+                    value,
+                    freight,
                     status: 'Planejando',
                     imgUrl: wishlistImageData,
                     date: null
