@@ -1658,32 +1658,124 @@
             return Number(normalizedValue);
         }
 
-        function formatCurrencyInput(value) {
-            const text = String(value);
-            const isNegative = text.startsWith('-');
-            const digits = text.replace(/\D/g, '');
-            if (!digits) return isNegative ? '-' : '';
+        function formatCurrencyAmount(value) {
+            return Number(value).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
 
-            const cents = digits.slice(-2).padStart(2, '0');
-            const whole = digits.slice(0, -2) || '0';
-            const formattedWhole = Number(whole).toLocaleString('pt-BR');
-            return `${isNegative ? '-' : ''}${formattedWhole},${cents}`;
+        function formatCurrencyDigits(digits, decimalPlaces) {
+            if (!digits) return { value: '', digitPositions: [] };
+
+            const fractionLength = Math.min(decimalPlaces, digits.length);
+            const wholeDigits = digits.slice(0, digits.length - fractionLength);
+            const fractionDigits = digits.slice(-fractionLength);
+            const formattedWhole = Number(wholeDigits || '0').toLocaleString('pt-BR');
+            const paddedFraction = fractionDigits.padStart(decimalPlaces, '0');
+            const displayedFraction = paddedFraction + (decimalPlaces === 1 ? '0' : '');
+            const value = `${formattedWhole},${displayedFraction}`;
+            const digitPositions = [];
+
+            let wholeDigitsSeen = 0;
+            for (let index = 0; index < formattedWhole.length && wholeDigitsSeen < wholeDigits.length; index++) {
+                if (/\d/.test(formattedWhole[index])) {
+                    digitPositions.push(index);
+                    wholeDigitsSeen++;
+                }
+            }
+
+            const fractionPadding = decimalPlaces - fractionDigits.length;
+            for (let index = 0; index < fractionDigits.length; index++) {
+                digitPositions.push(formattedWhole.length + 1 + fractionPadding + index);
+            }
+
+            return { value, digitPositions };
         }
 
         function applyCurrencyInputMask(input, allowNegative = false) {
-            input.addEventListener('input', () => {
-                const cursor = input.selectionStart ?? input.value.length;
-                const digitsBeforeCursor = input.value.slice(0, cursor).replace(/\D/g, '').length;
-                const negativePrefix = allowNegative && input.value.trimStart().startsWith('-') ? '-' : '';
-                const formatted = formatCurrencyInput(`${negativePrefix}${input.value}`);
-                input.value = formatted;
+            input.addEventListener('beforeinput', event => {
+                const supportedInput = event.inputType.startsWith('insert')
+                    || event.inputType === 'deleteContentBackward'
+                    || event.inputType === 'deleteContentForward'
+                    || event.inputType === 'deleteByCut';
+                if (!supportedInput) return;
 
-                let nextCursor = 0;
-                let digitsSeen = 0;
-                while (nextCursor < formatted.length && digitsSeen < digitsBeforeCursor) {
-                    if (/\d/.test(formatted[nextCursor])) digitsSeen++;
-                    nextCursor++;
+                let digits = input.dataset.currencyDigits || '';
+                let decimalPlaces = Number(input.dataset.currencyDecimalPlaces) || 1;
+                let isNegative = input.dataset.currencyNegative === 'true';
+                if (input.dataset.currencyFormatted !== input.value) {
+                    const currentValue = input.value.trim();
+                    if (!currentValue) {
+                        digits = '';
+                        decimalPlaces = 1;
+                        isNegative = false;
+                    } else {
+                        const parsedValue = parseCurrencyValue(currentValue);
+                        digits = Number.isFinite(parsedValue)
+                            ? String(Math.round(Math.abs(parsedValue) * 100))
+                            : '';
+                        decimalPlaces = 2;
+                        isNegative = parsedValue < 0;
+                    }
                 }
+
+                const { digitPositions } = formatCurrencyDigits(digits, decimalPlaces);
+                const start = input.selectionStart ?? input.value.length;
+                const end = input.selectionEnd ?? start;
+                const rawStart = digitPositions.filter(position => position < start).length;
+                const rawEnd = digitPositions.filter(position => position < end).length;
+                let nextDigits = digits;
+                let nextDecimalPlaces = decimalPlaces;
+                let nextNegative = isNegative;
+                let nextRawCursor = rawStart;
+
+                if (event.inputType.startsWith('insert')) {
+                    const insertedText = event.data ?? event.dataTransfer?.getData('text') ?? '';
+                    const insertedDigits = insertedText.replace(/\D/g, '');
+                    if (allowNegative && insertedText.includes('-')) nextNegative = true;
+                    if (insertedText.includes(',') || insertedText.includes('.')) nextDecimalPlaces = 2;
+                    if (!insertedDigits && insertedText !== '-') {
+                        if (insertedText.includes(',') || insertedText.includes('.')) {
+                            event.preventDefault();
+                            const formatted = formatCurrencyDigits(nextDigits, nextDecimalPlaces);
+                            input.value = `${nextNegative ? '-' : ''}${formatted.value}`;
+                            input.dataset.currencyDigits = nextDigits;
+                            input.dataset.currencyDecimalPlaces = String(nextDecimalPlaces);
+                            input.dataset.currencyNegative = String(nextNegative);
+                            input.dataset.currencyFormatted = input.value;
+                            input.setSelectionRange(start, start);
+                        }
+                        return;
+                    }
+                    if (rawStart === 0 && rawEnd === digits.length && !insertedText.includes(',') && !insertedText.includes('.')) {
+                        nextDecimalPlaces = 1;
+                    }
+                    nextDigits = `${digits.slice(0, rawStart)}${insertedDigits}${digits.slice(rawEnd)}`;
+                    nextRawCursor = rawStart + insertedDigits.length;
+                } else {
+                    let deleteStart = rawStart;
+                    let deleteEnd = rawEnd;
+                    if (deleteStart === deleteEnd && event.inputType === 'deleteContentBackward') {
+                        deleteStart = Math.max(0, deleteStart - 1);
+                    } else if (deleteStart === deleteEnd && event.inputType === 'deleteContentForward') {
+                        deleteEnd = Math.min(digits.length, deleteEnd + 1);
+                    }
+                    nextDigits = `${digits.slice(0, deleteStart)}${digits.slice(deleteEnd)}`;
+                    nextRawCursor = deleteStart;
+                }
+
+                event.preventDefault();
+                const formatted = formatCurrencyDigits(nextDigits, nextDecimalPlaces);
+                input.value = `${nextNegative && allowNegative ? '-' : ''}${formatted.value}`;
+                input.dataset.currencyDigits = nextDigits;
+                input.dataset.currencyDecimalPlaces = String(nextDecimalPlaces);
+                input.dataset.currencyNegative = String(nextNegative && allowNegative);
+                input.dataset.currencyFormatted = input.value;
+                const prefixLength = nextNegative && allowNegative ? 1 : 0;
+                const nextCursor = nextRawCursor < formatted.digitPositions.length
+                    ? prefixLength + formatted.digitPositions[nextRawCursor]
+                    : input.value.length - (nextDecimalPlaces === 1 && nextDigits ? 1 : 0);
                 input.setSelectionRange(nextCursor, nextCursor);
             });
         }
@@ -2018,7 +2110,7 @@
             form.dataset.itemId = item.id;
             document.getElementById('wishlist-purchase-date').value = todayDate;
             document.getElementById('wishlist-purchase-description').value = item.item;
-            document.getElementById('wishlist-purchase-value').value = formatCurrencyInput(total.toFixed(2));
+            document.getElementById('wishlist-purchase-value').value = formatCurrencyAmount(total);
             document.getElementById('wishlist-credit-store').value = item.store || '';
             updateInvoiceStoreVisibility(
                 document.getElementById('wishlist-credit-invoice').value,
