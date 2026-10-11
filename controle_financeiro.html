@@ -2294,20 +2294,24 @@
                 summary.type = 'button';
                 summary.className = 'invoice-summary font-bebas';
                 summary.setAttribute('aria-pressed', String(activeInvoiceFilter === invoice));
-                summary.setAttribute('aria-label', `Filtrar pela fatura ${invoice}: ${formatCurrency(total)}`);
+                summary.setAttribute('aria-label', `Filtrar pela fatura ${invoice}${invoice === 'Outros' ? '' : `: ${formatCurrency(total)}`}`);
                 summary.addEventListener('click', () => {
                     activeInvoiceFilter = activeInvoiceFilter === invoice ? 'all' : invoice;
                     renderInvoices();
                 });
 
                 const label = document.createElement('span');
-                label.textContent = `TOTAL ${invoice.toUpperCase()}`;
+                label.textContent = invoice === 'Outros' ? 'Outros' : `TOTAL ${invoice.toUpperCase()}`;
 
-                const value = document.createElement('strong');
-                value.className = 'invoice-summary-total';
-                value.textContent = formatCurrency(total);
+                if (invoice !== 'Outros') {
+                    const value = document.createElement('strong');
+                    value.className = 'invoice-summary-total';
+                    value.textContent = formatCurrency(total);
+                    summary.append(label, value);
+                } else {
+                    summary.append(label);
+                }
 
-                summary.append(label, value);
                 invoiceTotals.appendChild(summary);
             });
 
