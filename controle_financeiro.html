@@ -245,6 +245,15 @@
             font-size: 0.9rem;
             letter-spacing: 0.4px;
         }
+        .expense-day-filter {
+            width: 142px;
+            min-width: 0;
+            padding: 3px 8px;
+            border: 1px solid rgba(140, 169, 206, 0.45);
+            background-color: rgba(255, 255, 255, 0.55);
+            font-size: 0.9rem;
+            letter-spacing: 0.4px;
+        }
         .invoice-summary {
             display: flex;
             align-items: center;
@@ -953,13 +962,15 @@
             <div class="tabela-container">
                 <!-- Laço Decorativo -->
                 <img src="laço.png" alt="Laço" class="absolute -top-6 -right-6 w-24 drop-shadow-md z-10 pointer-events-none">
-                <div class="mb-2 flex items-center justify-end gap-2">
+                <div class="mb-2 flex flex-wrap items-center justify-end gap-2">
                     <label for="expense-month-filter" class="sr-only">Filtrar gastos por mês</label>
                     <select id="expense-month-filter" class="input-pastel invoice-table-filter" aria-label="Filtrar gastos por mês">
                         <option value="10">Outubro</option>
                         <option value="11">Novembro</option>
                         <option value="12">Dezembro</option>
                     </select>
+                    <label for="expense-day-filter" class="sr-only">Filtrar gastos por dia</label>
+                    <input type="date" id="expense-day-filter" class="input-pastel expense-day-filter" aria-label="Filtrar gastos por dia">
                     <label for="expense-date-sort" class="sr-only">Ordenar gastos por data</label>
                     <select id="expense-date-sort" class="input-pastel expense-date-sort" aria-label="Ordenar gastos por data">
                         <option value="newest">Mais recentes</option>
@@ -2216,10 +2227,13 @@
             const tbody = document.getElementById('tbody-gastos');
             tbody.innerHTML = '<tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>';
             const selectedMonth = document.getElementById('expense-month-filter').value;
+            const selectedDate = document.getElementById('expense-day-filter').value;
             const dateSortOrder = document.getElementById('expense-date-sort').value;
             
             const sorted = [...state.expenses]
-                .filter(item => String(getCycleMonthNumber(item.date)).padStart(2, '0') === selectedMonth)
+                .filter(item => selectedDate
+                    ? item.date === selectedDate
+                    : String(getCycleMonthNumber(item.date)).padStart(2, '0') === selectedMonth)
                 .sort((a, b) => dateSortOrder === 'oldest'
                     ? a.date.localeCompare(b.date)
                     : b.date.localeCompare(a.date));
@@ -2630,6 +2644,7 @@
             });
             setDefaultInvoiceMonthFilter();
             document.getElementById('expense-month-filter').addEventListener('change', renderExpenses);
+            document.getElementById('expense-day-filter').addEventListener('change', renderExpenses);
             document.getElementById('expense-date-sort').addEventListener('change', renderExpenses);
             document.getElementById('invoice-month-filter').addEventListener('change', renderInvoices);
             document.getElementById('wishlist-credit-invoice').addEventListener('change', (event) => {
