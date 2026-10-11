@@ -1359,6 +1359,7 @@
             profiles: {},
             payToContacts: [],
             incomes: { 'OUT': 0, 'NOV': 0, 'DEZ': 0 },
+            balanceCarryovers: {},
             expenses: [], // { id, date, desc, value, category, bank, payTo, type, paid }
             invoices: [], // { id, date, desc, value, installments, invoice, store, paid }
             savings: [],  // { id, date, value, bank }
@@ -1441,6 +1442,7 @@
         function getActiveProfileData() {
             return {
                 incomes: { ...state.incomes },
+                balanceCarryovers: { ...state.balanceCarryovers },
                 expenses: state.expenses,
                 invoices: state.invoices,
                 savings: state.savings,
@@ -1452,6 +1454,9 @@
         function loadProfileData(profile) {
             const profileData = state.profiles[profile] || {};
             state.incomes = { 'OUT': 0, 'NOV': 0, 'DEZ': 0, ...profileData.incomes };
+            state.balanceCarryovers = profileData.balanceCarryovers && typeof profileData.balanceCarryovers === 'object'
+                ? { ...profileData.balanceCarryovers }
+                : {};
             state.expenses = Array.isArray(profileData.expenses) ? profileData.expenses : [];
             state.invoices = Array.isArray(profileData.invoices) ? profileData.invoices : [];
             state.savings = Array.isArray(profileData.savings) ? profileData.savings : [];
@@ -2229,7 +2234,7 @@
             return `<tr><td colspan="10" class="p-0"><div class="linha-listrada"></div></td></tr>`;
         }
 
-        function calculateAndRenderDashboard() {
+        function calculateDashboardTotals() {
             let inTotals = { 'OUT': 0, 'NOV': 0, 'DEZ': 0 };
             let outTotals = { 'OUT': 0, 'NOV': 0, 'DEZ': 0 };
 
@@ -2268,6 +2273,53 @@
                     }
                 }
             });
+
+            return { inTotals, outTotals };
+        }
+
+        function processBalanceCarryover() {
+            const cutoffDay = state.profile === 'lenira' ? 10 : 27;
+            const today = new Date();
+            const boundaryDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() < cutoffDay) {
+                boundaryDate.setMonth(boundaryDate.getMonth() - 1);
+            }
+
+            const cycleYear = boundaryDate.getFullYear();
+            const cycleMonth = boundaryDate.getMonth() + 1;
+            const monthLabels = { 10: 'OUT', 11: 'NOV', 12: 'DEZ' };
+            const sourceMonth = monthLabels[cycleMonth];
+            const nextMonth = monthLabels[cycleMonth + 1];
+            if (cycleYear !== 2026 || !sourceMonth || !nextMonth) return;
+
+            const carryoverKey = `${cycleYear}-${String(cycleMonth).padStart(2, '0')}`;
+            if (Object.prototype.hasOwnProperty.call(state.balanceCarryovers, carryoverKey)) return;
+
+            const { inTotals, outTotals } = calculateDashboardTotals();
+            const income = (Number(state.incomes[sourceMonth]) || 0) + inTotals[sourceMonth];
+            const balance = Math.round((income - outTotals[sourceMonth]) * 100) / 100;
+            state.balanceCarryovers[carryoverKey] = balance;
+
+            if (balance > 0) {
+                const date = `${cycleYear}-${String(cycleMonth).padStart(2, '0')}-${String(cutoffDay).padStart(2, '0')}`;
+                state.expenses.push({
+                    id: generateId(),
+                    date,
+                    desc: `Saldo em conta de ${sourceMonth} transferido para ${nextMonth}`,
+                    value: balance,
+                    bank: '',
+                    payTo: '',
+                    type: 'Entrada',
+                    paid: false,
+                    balanceCarryoverKey: carryoverKey
+                });
+            }
+
+            saveState();
+        }
+
+        function calculateAndRenderDashboard() {
+            const { inTotals, outTotals } = calculateDashboardTotals();
 
             // Atualiza UI da Visão Mensal
             ['OUT', 'NOV', 'DEZ'].forEach(m => {
@@ -3025,6 +3077,8 @@
                 state.profiles[state.profile] = getActiveProfileData();
                 localStorage.setItem('controleFinanceiroScrapbook', JSON.stringify(state));
             }
+            processBalanceCarryover();
+            window.setInterval(processBalanceCarryover, 60 * 1000);
             renderAll();
         };
     </script>
