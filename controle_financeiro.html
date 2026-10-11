@@ -1677,8 +1677,7 @@
             const wholeDigits = digits.slice(0, digits.length - fractionLength);
             const fractionDigits = digits.slice(-fractionLength);
             const formattedWhole = Number(wholeDigits || '0').toLocaleString('pt-BR');
-            const paddedFraction = fractionDigits.padStart(decimalPlaces, '0');
-            const displayedFraction = paddedFraction + (decimalPlaces === 1 ? '0' : '');
+            const displayedFraction = fractionDigits.padStart(decimalPlaces, '0');
             const value = `${formattedWhole},${displayedFraction}`;
             const digitPositions = [];
 
@@ -1729,7 +1728,7 @@
 
                 let mode = input.dataset.currencyMode || 'automatic';
                 let digits = input.dataset.currencyDigits || '';
-                let decimalPlaces = Number(input.dataset.currencyDecimalPlaces) || 1;
+                let decimalPlaces = Number(input.dataset.currencyDecimalPlaces) || 2;
                 let wholeDigits = input.dataset.currencyWholeDigits || '';
                 let fractionDigits = input.dataset.currencyFractionDigits || '';
                 let isNegative = input.dataset.currencyNegative === 'true';
@@ -1738,7 +1737,7 @@
                     if (!currentValue) {
                         mode = 'automatic';
                         digits = '';
-                        decimalPlaces = 1;
+                        decimalPlaces = 2;
                         wholeDigits = '';
                         fractionDigits = '';
                         isNegative = false;
@@ -1788,7 +1787,7 @@
                         if (rawStart === 0 && rawEnd === combinedDigits.length) {
                             mode = 'automatic';
                             digits = insertedDigits;
-                            decimalPlaces = 1;
+                            decimalPlaces = 2;
                             const formatted = formatCurrencyDigits(digits, decimalPlaces);
                             input.value = `${isNegative && allowNegative ? '-' : ''}${formatted.value}`;
                             input.dataset.currencyMode = mode;
@@ -1816,14 +1815,14 @@
                         const nextRawCursor = rawStart + insertedDigits.length;
                         const cursor = nextRawCursor < formatted.digitPositions.length
                             ? formatted.digitPositions[nextRawCursor]
-                            : input.value.length - (fractionDigits.length < 2 ? 1 : 0);
+                            : input.value.length;
                         input.setSelectionRange(cursor + (isNegative && allowNegative ? 1 : 0), cursor + (isNegative && allowNegative ? 1 : 0));
                         return;
                     } else {
                         event.preventDefault();
                         const insertedDigits = insertedText.replace(/\D/g, '');
                         if (!insertedDigits && insertedText !== '-') return;
-                        if (rawStart === 0 && rawEnd === digits.length) decimalPlaces = 1;
+                        if (rawStart === 0 && rawEnd === digits.length) decimalPlaces = 2;
                         digits = `${digits.slice(0, rawStart)}${insertedDigits}${digits.slice(rawEnd)}`;
                         const formatted = formatCurrencyDigits(digits, decimalPlaces);
                         input.value = `${isNegative && allowNegative ? '-' : ''}${formatted.value}`;
@@ -1835,7 +1834,7 @@
                         const nextRawCursor = rawStart + insertedDigits.length;
                         const cursor = nextRawCursor < formatted.digitPositions.length
                             ? formatted.digitPositions[nextRawCursor]
-                            : input.value.length - (decimalPlaces === 1 && digits ? 1 : 0);
+                            : input.value.length;
                         input.setSelectionRange(cursor + (isNegative && allowNegative ? 1 : 0), cursor + (isNegative && allowNegative ? 1 : 0));
                         return;
                     }
@@ -1853,7 +1852,7 @@
                     if (!nextDigits) {
                         mode = 'automatic';
                         digits = '';
-                        decimalPlaces = 1;
+                        decimalPlaces = 2;
                         wholeDigits = '';
                         fractionDigits = '';
                         input.value = '';
@@ -1889,7 +1888,7 @@
                     input.dataset.currencyFormatted = input.value;
                     const cursor = deleteStart < formatted.digitPositions.length
                         ? formatted.digitPositions[deleteStart]
-                        : input.value.length - (decimalPlaces === 1 && digits ? 1 : 0);
+                        : input.value.length;
                     input.setSelectionRange(cursor + (isNegative && allowNegative ? 1 : 0), cursor + (isNegative && allowNegative ? 1 : 0));
                     return;
                 }
