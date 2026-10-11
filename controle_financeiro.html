@@ -1633,6 +1633,21 @@
             else payToInput.value = '';
         }
 
+        function getInvoiceCycleStartDate(dateString) {
+            const [year, month, day] = String(dateString).split('-').map(Number);
+            const purchaseDate = new Date(year, month - 1, day);
+            if (purchaseDate.getFullYear() !== year
+                || purchaseDate.getMonth() !== month - 1
+                || purchaseDate.getDate() !== day) {
+                return null;
+            }
+
+            const cutoffDay = state.profile === 'lenira' ? 10 : 27;
+            const cycleOffset = day >= cutoffDay ? 1 : 0;
+            const invoiceOffset = state.profile === 'rebecca' ? 1 : 0;
+            return new Date(year, month - 1 + cycleOffset + invoiceOffset, 1);
+        }
+
         function createInvoiceInstallments({ date, desc, value, installments, invoice, store, payTo, invoiceMonth }) {
             const installmentCount = Number(installments);
             const totalCents = Math.round(Number(value) * 100);
@@ -1641,12 +1656,10 @@
                 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
             ];
             const selectedInvoiceMonth = months.indexOf(invoiceMonth);
-            const purchaseDate = new Date(`${date}T12:00:00`);
-            const purchaseMonth = purchaseDate.getMonth();
-            const startMonth = purchaseMonth;
+            const cycleStartDate = getInvoiceCycleStartDate(date);
             if (!Number.isFinite(totalCents) || totalCents <= 0
                 || !Number.isInteger(installmentCount) || installmentCount < 1
-                || selectedInvoiceMonth < 0 || Number.isNaN(purchaseDate.getTime())) {
+                || selectedInvoiceMonth < 0 || !cycleStartDate) {
                 throw new Error('Dados inválidos para gerar as parcelas da fatura.');
             }
 
@@ -1665,7 +1678,7 @@
                 invoice,
                 store: state.profile === 'rebecca' && invoice === 'Celular' ? '' : store,
                 payTo: state.profile === 'rebecca' && invoice === 'Celular' ? payTo || '' : '',
-                invoiceMonth: months[(startMonth + index) % months.length],
+                invoiceMonth: months[(cycleStartDate.getMonth() + index) % months.length],
                 paid: false
             }));
         }
@@ -2053,20 +2066,21 @@
 
             const appendInvoiceRow = (tbody, item, isCellphone) => {
                 const valParcela = getInvoiceInstallmentValue(item);
-                const purchDate = new Date(item.date + 'T12:00:00');
                 const invoiceMonths = [
                     'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
                     'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
                 ];
                 const invoiceMonthIndex = invoiceMonths.indexOf(item.invoiceMonth);
-                const invoiceYear = purchDate.getFullYear()
-                    + (invoiceMonthIndex < purchDate.getMonth() ? 1 : 0);
-                const invoiceDate = invoiceMonthIndex >= 0
-                    ? new Date(invoiceYear, invoiceMonthIndex, 1)
+                const cycleStartDate = getInvoiceCycleStartDate(item.date);
+                let invoiceDate = cycleStartDate && invoiceMonthIndex >= 0
+                    ? new Date(cycleStartDate.getFullYear(), invoiceMonthIndex, 1)
                     : null;
+                if (invoiceDate && invoiceDate < cycleStartDate) {
+                    invoiceDate = new Date(invoiceDate.getFullYear() + 1, invoiceMonthIndex, 1);
+                }
                 const invoiceOffset = invoiceDate
-                    ? ((invoiceDate.getFullYear() - purchDate.getFullYear()) * 12
-                        + invoiceDate.getMonth() - purchDate.getMonth())
+                    ? ((invoiceDate.getFullYear() - cycleStartDate.getFullYear()) * 12
+                        + invoiceDate.getMonth() - cycleStartDate.getMonth())
                     : 0;
                 const installmentNumber = Number(item.installmentNumber) || invoiceOffset + 1;
                 const instText = `${installmentNumber} / ${item.installments}`;
@@ -2119,10 +2133,10 @@
                 if (!item.installmentGroupId
                     || !Number.isInteger(Number(item.installmentNumber))
                     || Number(item.installmentNumber) < 1) return;
-                const purchaseDate = new Date(`${item.date}T12:00:00`);
-                if (Number.isNaN(purchaseDate.getTime())) return;
+                const cycleStartDate = getInvoiceCycleStartDate(item.date);
+                if (!cycleStartDate) return;
                 const expectedMonth = months[
-                    (purchaseDate.getMonth() + Number(item.installmentNumber) - 1) % months.length
+                    (cycleStartDate.getMonth() + Number(item.installmentNumber) - 1) % months.length
                 ];
                 if (item.invoiceMonth !== expectedMonth) {
                     item.invoiceMonth = expectedMonth;
