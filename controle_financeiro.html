@@ -239,16 +239,22 @@
         .invoice-summary {
             display: flex;
             align-items: center;
-            gap: 12px;
-            min-height: 48px;
-            padding: 6px 16px;
+            gap: 8px;
+            min-height: 40px;
+            padding: 4px 10px;
             border: 2px solid var(--azul-escuro);
             border-radius: 16px;
             background: var(--amarelo-pastel);
             color: var(--texto-marrom);
+            cursor: pointer;
+            font: inherit;
+            text-align: left;
+        }
+        .invoice-summary[aria-pressed="true"] {
+            background: var(--azul-pastel);
         }
         .invoice-summary-total {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             line-height: 1;
         }
         .wishlist-purchased-status {
@@ -1014,7 +1020,7 @@
                     <label class="w-20 font-bebas text-xl">PARCELAS:</label>
                     <input type="number" min="1" id="f-parcelas" required class="input-pastel font-gliker" placeholder="Ex: 12">
                 </div>
-                <div class="flex items-center gap-1">
+                <div id="invoice-store-field" class="flex items-center gap-1">
                     <label class="w-20 font-bebas text-xl">LOJA:</label>
                     <input type="text" id="f-loja" class="input-pastel">
                 </div>
@@ -1050,16 +1056,32 @@
                         </label>
                     </div>
                 </div>
-                <table class="tabela-scrap">
-                    <thead class="font-bebas">
-                        <tr>
-                            <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>FATURA</th><th>LOJA</th><th>AÇÃO</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-fatura">
-                        <tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>
-                    </tbody>
-                </table>
+                <div id="invoice-card-table">
+                    <h3 class="mb-2 font-bebas text-xl text-[var(--azul-escuro)]">FATURAS DOS CARTÕES</h3>
+                    <table class="tabela-scrap">
+                        <thead class="font-bebas">
+                            <tr>
+                                <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>FATURA</th><th>LOJA</th><th>AÇÃO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-fatura">
+                            <tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="invoice-cell-table" class="mt-5 hidden" hidden>
+                    <h3 class="mb-2 font-bebas text-xl text-[var(--azul-escuro)]">FATURA CELULAR</h3>
+                    <table class="tabela-scrap">
+                        <thead class="font-bebas">
+                            <tr>
+                                <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>AÇÃO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-fatura-celular">
+                            <tr><td colspan="6" class="p-0"><div class="linha-listrada"></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -1250,7 +1272,7 @@
                         <label for="wishlist-credit-installments" class="w-24 font-bebas text-lg">PARCELAS:</label>
                         <input type="number" id="wishlist-credit-installments" min="1" step="1" value="1" class="input-pastel" required>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div id="wishlist-credit-store-field" class="flex items-center gap-2">
                         <label for="wishlist-credit-store" class="w-24 font-bebas text-lg">LOJA:</label>
                         <input type="text" id="wishlist-credit-store" class="input-pastel">
                     </div>
@@ -1311,6 +1333,7 @@
         let wishlistImageData = '';
         let trackingImageData = '';
         let pendingWishlistPurchaseId = null;
+        let activeInvoiceFilter = 'all';
 
         async function compressImage(file) {
             if (!file.type.startsWith('image/')) throw new Error('Arquivo não é uma imagem.');
@@ -1540,7 +1563,7 @@
         function getInvoiceOptions() {
             return state.profile === 'lenira'
                 ? ['Shopee', 'Coin']
-                : ['Itaú', 'Shopee'];
+                : ['Itaú', 'Shopee', 'Celular'];
         }
 
         function renderInvoiceOptions() {
@@ -1557,10 +1580,63 @@
                 input.name = 'f-fatura';
                 input.value = invoice;
                 input.required = index === 0;
+                input.addEventListener('change', () => {
+                    updateInvoiceStoreVisibility(
+                        input.value,
+                        document.getElementById('invoice-store-field'),
+                        document.getElementById('f-loja')
+                    );
+                });
 
                 label.append(input, document.createTextNode(invoice));
                 container.appendChild(label);
             });
+            updateInvoiceStoreVisibility(
+                '',
+                document.getElementById('invoice-store-field'),
+                document.getElementById('f-loja')
+            );
+        }
+
+        function updateInvoiceStoreVisibility(invoice, field, input) {
+            const isCellphoneInvoice = state.profile === 'rebecca' && invoice === 'Celular';
+            field.hidden = isCellphoneInvoice;
+            field.classList.toggle('hidden', isCellphoneInvoice);
+            input.disabled = isCellphoneInvoice;
+            if (isCellphoneInvoice) input.value = '';
+        }
+
+        function createInvoiceInstallments({ date, desc, value, installments, invoice, store, invoiceMonth }) {
+            const installmentCount = Number(installments);
+            const totalCents = Math.round(Number(value) * 100);
+            const months = [
+                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+            ];
+            const startMonth = months.indexOf(invoiceMonth);
+            if (!Number.isFinite(totalCents) || totalCents <= 0
+                || !Number.isInteger(installmentCount) || installmentCount < 1
+                || startMonth < 0) {
+                throw new Error('Dados inválidos para gerar as parcelas da fatura.');
+            }
+
+            const baseCents = Math.floor(totalCents / installmentCount);
+            const extraCents = totalCents % installmentCount;
+            const installmentGroupId = generateId();
+            return Array.from({ length: installmentCount }, (_, index) => ({
+                id: generateId(),
+                installmentGroupId,
+                installmentNumber: index + 1,
+                date,
+                desc,
+                value: String(value),
+                installmentValue: (baseCents + (index < extraCents ? 1 : 0)) / 100,
+                installments: installmentCount,
+                invoice,
+                store: state.profile === 'rebecca' && invoice === 'Celular' ? '' : store,
+                invoiceMonth: months[(startMonth + index) % months.length],
+                paid: false
+            }));
         }
 
         function getEconomyBanks() {
@@ -1643,6 +1719,7 @@
 
             state.profiles[state.profile] = getActiveProfileData();
             state.profile = profile;
+            activeInvoiceFilter = 'all';
             loadProfileData(profile);
             updateExpenseMonthFilterLabels();
             document.querySelectorAll('.monthly-profile-option').forEach(button => {
@@ -1848,6 +1925,11 @@
             document.getElementById('wishlist-purchase-description').value = item.item;
             document.getElementById('wishlist-purchase-value').value = total.toFixed(2);
             document.getElementById('wishlist-credit-store').value = item.store || '';
+            updateInvoiceStoreVisibility(
+                document.getElementById('wishlist-credit-invoice').value,
+                document.getElementById('wishlist-credit-store-field'),
+                document.getElementById('wishlist-credit-store')
+            );
             pendingWishlistPurchaseId = item.id;
             document.getElementById('wishlist-purchase-dialog').showModal();
         }
@@ -1865,12 +1947,14 @@
         }
 
         function renderInvoices() {
-            const tbody = document.getElementById('tbody-fatura');
-            tbody.innerHTML = getStripedRow();
-            
+            const cardTbody = document.getElementById('tbody-fatura');
+            const cellphoneTbody = document.getElementById('tbody-fatura-celular');
+            cardTbody.replaceChildren();
+            cellphoneTbody.replaceChildren();
+
             const now = new Date();
             const selectedMonth = document.getElementById('invoice-month-filter').value;
-            const filteredInvoices = state.invoices
+            const monthInvoices = state.invoices
                 .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth);
             const invoiceNames = [...new Set([
                 ...getInvoiceOptions(),
@@ -1879,12 +1963,18 @@
             const invoiceTotals = document.getElementById('invoice-totals');
             invoiceTotals.replaceChildren();
             invoiceNames.forEach(invoice => {
-                const total = filteredInvoices
+                const total = monthInvoices
                     .filter(item => (item.invoice || 'Sem fatura') === invoice)
-                    .reduce((sum, item) => sum + parseFloat(item.value) / parseInt(item.installments), 0);
-                const summary = document.createElement('div');
+                    .reduce((sum, item) => sum + getInvoiceInstallmentValue(item), 0);
+                const summary = document.createElement('button');
+                summary.type = 'button';
                 summary.className = 'invoice-summary font-bebas';
-                summary.setAttribute('aria-atomic', 'true');
+                summary.setAttribute('aria-pressed', String(activeInvoiceFilter === invoice));
+                summary.setAttribute('aria-label', `Filtrar pela fatura ${invoice}: ${formatCurrency(total)}`);
+                summary.addEventListener('click', () => {
+                    activeInvoiceFilter = activeInvoiceFilter === invoice ? 'all' : invoice;
+                    renderInvoices();
+                });
 
                 const label = document.createElement('span');
                 label.textContent = `TOTAL ${invoice.toUpperCase()}`;
@@ -1896,6 +1986,26 @@
                 summary.append(label, value);
                 invoiceTotals.appendChild(summary);
             });
+
+            const filteredInvoices = monthInvoices.filter(item => (
+                activeInvoiceFilter === 'all' || (item.invoice || 'Sem fatura') === activeInvoiceFilter
+            ));
+            const isCellphoneInvoice = item => state.profile === 'rebecca' && item.invoice === 'Celular';
+            const cardInvoices = filteredInvoices.filter(item => !isCellphoneInvoice(item));
+            const cellphoneInvoices = filteredInvoices.filter(isCellphoneInvoice);
+            const cardTable = document.getElementById('invoice-card-table');
+            const cellphoneTable = document.getElementById('invoice-cell-table');
+            const showCellphoneTable = state.profile === 'rebecca' && activeInvoiceFilter === 'Celular';
+            cardTable.hidden = showCellphoneTable;
+            cardTable.classList.toggle('hidden', cardTable.hidden);
+            cellphoneTable.hidden = !showCellphoneTable;
+            cellphoneTable.classList.toggle('hidden', cellphoneTable.hidden);
+            if (activeInvoiceFilter === 'Celular') {
+                cellphoneTable.classList.remove('mt-5');
+            } else {
+                cellphoneTable.classList.add('mt-5');
+            }
+
             const selectAllPaid = document.getElementById('invoice-select-all-paid');
             const paidCount = filteredInvoices.filter(item => item.paid).length;
             selectAllPaid.checked = filteredInvoices.length > 0 && paidCount === filteredInvoices.length;
@@ -1906,20 +2016,28 @@
                 : 'Marcar todos os itens exibidos como pagos';
             selectAllPaid.setAttribute('aria-label', selectAllLabel);
             selectAllPaid.parentElement.title = selectAllLabel;
-            
-            filteredInvoices.forEach(item => {
-                const valParcela = parseFloat(item.value) / parseInt(item.installments);
-                
-                // Lógica simples para identificar a parcela atual (baseado no mês da compra)
+
+            const appendInvoiceRow = (tbody, item, isCellphone) => {
+                const valParcela = getInvoiceInstallmentValue(item);
                 const purchDate = new Date(item.date + 'T12:00:00');
                 const monthsDiff = (now.getFullYear() - purchDate.getFullYear()) * 12 + (now.getMonth() - purchDate.getMonth());
-                let instText = `${monthsDiff + 1} / ${item.installments}`;
-                
-                if (monthsDiff + 1 > item.installments) instText = "Finalizado";
-                else if (monthsDiff < 0) instText = "Futuro";
+                let instText = item.installmentNumber
+                    ? `Parcela ${item.installmentNumber} / ${item.installments}`
+                    : `${monthsDiff + 1} / ${item.installments}`;
+                if (!item.installmentNumber) {
+                    if (monthsDiff + 1 > item.installments) instText = 'Finalizado';
+                    else if (monthsDiff < 0) instText = 'Futuro';
+                }
 
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
+                tr.innerHTML = isCellphone ? `
+                    <td class="font-bebas text-lg text-center">${formatDateBR(item.date)}</td>
+                    <td class="font-bebas text-lg">${item.desc}</td>
+                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}${item.invoiceMonth ? ` - fatura ${item.invoiceMonth}` : ''}</td>
+                    <td class="font-bebas text-lg">${instText}</td>
+                    <td class="text-center"><input type="checkbox" class="invoice-paid-checkbox" ${item.paid ? 'checked' : ''} aria-label="Marcar compra ${item.desc} como ${item.paid ? 'não paga' : 'paga'}" title="${item.paid ? 'Paga' : 'Não paga'}" onchange="updateInvoicePaid('${item.id}', this.checked)"></td>
+                    <td><button onclick="deleteItem('invoices', '${item.id}')" class="text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition">X</button></td>
+                ` : `
                     <td class="font-bebas text-lg text-center">${formatDateBR(item.date)}</td>
                     <td class="font-bebas text-lg">${item.desc}</td>
                     <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}${item.invoiceMonth ? ` - fatura ${item.invoiceMonth}` : ''}</td>
@@ -1930,13 +2048,32 @@
                     <td><button onclick="deleteItem('invoices', '${item.id}')" class="text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition">X</button></td>
                 `;
                 tbody.appendChild(tr);
-            });
+            };
+
+            cardInvoices.forEach(item => appendInvoiceRow(cardTbody, item, false));
+            cellphoneInvoices.forEach(item => appendInvoiceRow(cellphoneTbody, item, true));
+            if (cardInvoices.length === 0) {
+                cardTbody.innerHTML = '<tr><td colspan="8" class="p-0"><div class="linha-listrada"></div></td></tr>';
+            }
+            if (cellphoneInvoices.length === 0) {
+                cellphoneTbody.innerHTML = '<tr><td colspan="6" class="p-0"><div class="linha-listrada"></div></td></tr>';
+            }
+        }
+
+        function getInvoiceInstallmentValue(item) {
+            const installmentValue = Number(item.installmentValue);
+            return Number.isFinite(installmentValue)
+                ? installmentValue
+                : Number(item.value) / Number(item.installments);
         }
 
         function updateVisibleInvoicesPaid(paid) {
             const selectedMonth = document.getElementById('invoice-month-filter').value;
             state.invoices
-                .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth)
+                .filter(item => (
+                    (selectedMonth === 'all' || item.invoiceMonth === selectedMonth)
+                    && (activeInvoiceFilter === 'all' || (item.invoice || 'Sem fatura') === activeInvoiceFilter)
+                ))
                 .forEach(item => {
                     item.paid = paid;
                 });
@@ -2027,6 +2164,13 @@
             renderEconomyBanks();
             document.getElementById('expense-month-filter').addEventListener('change', renderExpenses);
             document.getElementById('invoice-month-filter').addEventListener('change', renderInvoices);
+            document.getElementById('wishlist-credit-invoice').addEventListener('change', (event) => {
+                updateInvoiceStoreVisibility(
+                    event.currentTarget.value,
+                    document.getElementById('wishlist-credit-store-field'),
+                    document.getElementById('wishlist-credit-store')
+                );
+            });
             document.getElementById('invoice-select-all-paid').addEventListener('change', (event) => {
                 updateVisibleInvoicesPaid(event.currentTarget.checked);
             });
@@ -2074,17 +2218,15 @@
                         alert('Preencha os dados da fatura e das parcelas.');
                         return;
                     }
-                    state.invoices.push({
-                        id: generateId(),
+                    state.invoices = state.invoices.concat(createInvoiceInstallments({
                         date,
                         desc: description,
                         value,
                         installments,
                         invoice,
                         store: document.getElementById('wishlist-credit-store').value.trim(),
-                        invoiceMonth,
-                        paid: false
-                    });
+                        invoiceMonth
+                    }));
                 } else {
                     const bank = document.getElementById('wishlist-expense-bank').value;
                     if (!bank) {
@@ -2257,17 +2399,19 @@
                     return;
                 }
                 const fatura = document.querySelector('input[name="f-fatura"]:checked');
-                state.invoices.push({
-                    id: generateId(),
+                if (!fatura) {
+                    alert('Selecione a fatura usada na compra.');
+                    return;
+                }
+                state.invoices = state.invoices.concat(createInvoiceInstallments({
                     date: invoiceDate,
                     desc: document.getElementById('f-desc').value,
                     value: document.getElementById('f-valor').value,
                     installments: document.getElementById('f-parcelas').value,
-                    invoice: fatura ? fatura.value : '',
-                    store: document.getElementById('f-loja').value,
-                    invoiceMonth: document.getElementById('f-mes-fatura').value,
-                    paid: false
-                });
+                    invoice: fatura.value,
+                    store: document.getElementById('f-loja').value.trim(),
+                    invoiceMonth: document.getElementById('f-mes-fatura').value
+                }));
                 document.getElementById('invoice-month-dialog').close();
                 document.getElementById('form-fatura').reset();
                 saveState();
