@@ -1024,6 +1024,17 @@
                     <label class="w-20 font-bebas text-xl">LOJA:</label>
                     <input type="text" id="f-loja" class="input-pastel">
                 </div>
+                <div id="invoice-pay-to-field" class="flex items-center gap-1" hidden>
+                    <label for="f-pagar" class="w-24 font-bebas text-xl leading-tight">ENVIAR PARA:</label>
+                    <select id="f-pagar" class="input-pastel" disabled>
+                        <option value=""> </option>
+                        <option value="edysampa42@gmail.com">edysampa42@gmail.com</option>
+                        <option value="casanossafe@gmail.com">casanossafe@gmail.com</option>
+                        <option value="millymoraes02@gmail.com">millymoraes02@gmail.com</option>
+                        <option value="11949196756">Cabeleleira = 11949196756</option>
+                        <option value="52227219000121">Manicure = 52227219000121</option>
+                    </select>
+                </div>
                       <div class="lg:col-span-3 flex justify-end -mt-2">
                           <button type="submit" class="font-bebas btn-action">.✦ ݁˖</button>
                 </div>
@@ -1274,6 +1285,17 @@
                     <div id="wishlist-credit-store-field" class="flex items-center gap-2">
                         <label for="wishlist-credit-store" class="w-24 font-bebas text-lg">LOJA:</label>
                         <input type="text" id="wishlist-credit-store" class="input-pastel">
+                    </div>
+                    <div id="wishlist-credit-pay-to-field" class="flex items-center gap-2" hidden>
+                        <label for="wishlist-credit-pay-to" class="w-24 font-bebas text-lg">ENVIAR PARA:</label>
+                        <select id="wishlist-credit-pay-to" class="input-pastel" disabled>
+                            <option value=""> </option>
+                            <option value="edysampa42@gmail.com">edysampa42@gmail.com</option>
+                            <option value="casanossafe@gmail.com">casanossafe@gmail.com</option>
+                            <option value="millymoraes02@gmail.com">millymoraes02@gmail.com</option>
+                            <option value="11949196756">Cabeleleira = 11949196756</option>
+                            <option value="52227219000121">Manicure = 52227219000121</option>
+                        </select>
                     </div>
                 </fieldset>
                 <fieldset id="wishlist-other-fields" class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0" disabled hidden>
@@ -1579,43 +1601,52 @@
                 input.name = 'f-fatura';
                 input.value = invoice;
                 input.required = index === 0;
-                input.addEventListener('change', () => {
-                    updateInvoiceStoreVisibility(
-                        input.value,
-                        document.getElementById('invoice-store-field'),
-                        document.getElementById('f-loja')
-                    );
-                });
+                input.addEventListener('change', () => updateInvoiceFormFields(input.value));
 
                 label.append(input, document.createTextNode(invoice));
                 container.appendChild(label);
             });
+            updateInvoiceFormFields('');
+        }
+
+        function updateInvoiceFormFields(invoice) {
             updateInvoiceStoreVisibility(
-                '',
+                invoice,
                 document.getElementById('invoice-store-field'),
-                document.getElementById('f-loja')
+                document.getElementById('f-loja'),
+                document.getElementById('invoice-pay-to-field'),
+                document.getElementById('f-pagar')
             );
         }
 
-        function updateInvoiceStoreVisibility(invoice, field, input) {
+        function updateInvoiceStoreVisibility(invoice, storeField, storeInput, payToField, payToInput) {
             const isCellphoneInvoice = state.profile === 'rebecca' && invoice === 'Celular';
-            field.hidden = isCellphoneInvoice;
-            field.classList.toggle('hidden', isCellphoneInvoice);
-            input.disabled = isCellphoneInvoice;
-            if (isCellphoneInvoice) input.value = '';
+            storeField.hidden = isCellphoneInvoice;
+            storeField.classList.toggle('hidden', isCellphoneInvoice);
+            storeInput.disabled = isCellphoneInvoice;
+            storeInput.required = false;
+            payToField.hidden = !isCellphoneInvoice;
+            payToField.classList.toggle('hidden', !isCellphoneInvoice);
+            payToInput.disabled = !isCellphoneInvoice;
+            payToInput.required = isCellphoneInvoice;
+            if (isCellphoneInvoice) storeInput.value = '';
+            else payToInput.value = '';
         }
 
-        function createInvoiceInstallments({ date, desc, value, installments, invoice, store, invoiceMonth }) {
+        function createInvoiceInstallments({ date, desc, value, installments, invoice, store, payTo, invoiceMonth }) {
             const installmentCount = Number(installments);
             const totalCents = Math.round(Number(value) * 100);
             const months = [
                 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
                 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
             ];
-            const startMonth = months.indexOf(invoiceMonth);
+            const selectedInvoiceMonth = months.indexOf(invoiceMonth);
+            const purchaseDate = new Date(`${date}T12:00:00`);
+            const purchaseMonth = purchaseDate.getMonth();
+            const startMonth = purchaseMonth;
             if (!Number.isFinite(totalCents) || totalCents <= 0
                 || !Number.isInteger(installmentCount) || installmentCount < 1
-                || startMonth < 0) {
+                || selectedInvoiceMonth < 0 || Number.isNaN(purchaseDate.getTime())) {
                 throw new Error('Dados inválidos para gerar as parcelas da fatura.');
             }
 
@@ -1633,6 +1664,7 @@
                 installments: installmentCount,
                 invoice,
                 store: state.profile === 'rebecca' && invoice === 'Celular' ? '' : store,
+                payTo: state.profile === 'rebecca' && invoice === 'Celular' ? payTo || '' : '',
                 invoiceMonth: months[(startMonth + index) % months.length],
                 paid: false
             }));
@@ -1746,6 +1778,7 @@
 
         function deleteItem(collection, id) {
             state[collection] = state[collection].filter(item => item.id !== id);
+            if (collection === 'invoices') reconcileInvoicePaymentExpenses();
             saveState();
         }
 
@@ -1927,8 +1960,11 @@
             updateInvoiceStoreVisibility(
                 document.getElementById('wishlist-credit-invoice').value,
                 document.getElementById('wishlist-credit-store-field'),
-                document.getElementById('wishlist-credit-store')
+                document.getElementById('wishlist-credit-store'),
+                document.getElementById('wishlist-credit-pay-to-field'),
+                document.getElementById('wishlist-credit-pay-to')
             );
+            document.getElementById('wishlist-credit-pay-to').value = '';
             pendingWishlistPurchaseId = item.id;
             document.getElementById('wishlist-purchase-dialog').showModal();
         }
@@ -1951,7 +1987,6 @@
             cardTbody.replaceChildren();
             cellphoneTbody.replaceChildren();
 
-            const now = new Date();
             const selectedMonth = document.getElementById('invoice-month-filter').value;
             const monthInvoices = state.invoices
                 .filter(item => selectedMonth === 'all' || item.invoiceMonth === selectedMonth);
@@ -2019,14 +2054,22 @@
             const appendInvoiceRow = (tbody, item, isCellphone) => {
                 const valParcela = getInvoiceInstallmentValue(item);
                 const purchDate = new Date(item.date + 'T12:00:00');
-                const monthsDiff = (now.getFullYear() - purchDate.getFullYear()) * 12 + (now.getMonth() - purchDate.getMonth());
-                let instText = item.installmentNumber
-                    ? `Parcela ${item.installmentNumber} / ${item.installments}`
-                    : `${monthsDiff + 1} / ${item.installments}`;
-                if (!item.installmentNumber) {
-                    if (monthsDiff + 1 > item.installments) instText = 'Finalizado';
-                    else if (monthsDiff < 0) instText = 'Futuro';
-                }
+                const invoiceMonths = [
+                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+                ];
+                const invoiceMonthIndex = invoiceMonths.indexOf(item.invoiceMonth);
+                const invoiceYear = purchDate.getFullYear()
+                    + (invoiceMonthIndex < purchDate.getMonth() ? 1 : 0);
+                const invoiceDate = invoiceMonthIndex >= 0
+                    ? new Date(invoiceYear, invoiceMonthIndex, 1)
+                    : null;
+                const invoiceOffset = invoiceDate
+                    ? ((invoiceDate.getFullYear() - purchDate.getFullYear()) * 12
+                        + invoiceDate.getMonth() - purchDate.getMonth())
+                    : 0;
+                const installmentNumber = Number(item.installmentNumber) || invoiceOffset + 1;
+                const instText = `${installmentNumber} / ${item.installments}`;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = isCellphone ? `
@@ -2066,6 +2109,85 @@
                 : Number(item.value) / Number(item.installments);
         }
 
+        function normalizeInvoiceInstallmentMonths() {
+            const months = [
+                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+            ];
+            let changed = false;
+            state.invoices.forEach(item => {
+                if (!item.installmentGroupId
+                    || !Number.isInteger(Number(item.installmentNumber))
+                    || Number(item.installmentNumber) < 1) return;
+                const purchaseDate = new Date(`${item.date}T12:00:00`);
+                if (Number.isNaN(purchaseDate.getTime())) return;
+                const expectedMonth = months[
+                    (purchaseDate.getMonth() + Number(item.installmentNumber) - 1) % months.length
+                ];
+                if (item.invoiceMonth !== expectedMonth) {
+                    item.invoiceMonth = expectedMonth;
+                    changed = true;
+                }
+            });
+            return changed;
+        }
+
+        function reconcileInvoicePaymentExpenses() {
+            const invoiceGroups = new Map();
+            state.invoices.forEach(item => {
+                if (!item.invoice || !item.invoiceMonth) return;
+                const key = JSON.stringify([item.invoice, item.invoiceMonth]);
+                if (!invoiceGroups.has(key)) {
+                    invoiceGroups.set(key, { invoice: item.invoice, month: item.invoiceMonth, items: [] });
+                }
+                invoiceGroups.get(key).items.push(item);
+            });
+
+            const paidGroups = new Map(
+                [...invoiceGroups.entries()].filter(([, group]) => group.items.every(item => item.paid))
+            );
+            state.expenses = state.expenses.filter(item => (
+                !item.invoicePaymentKey || paidGroups.has(item.invoicePaymentKey)
+            ));
+
+            paidGroups.forEach((group, key) => {
+                const matchingExpenses = state.expenses.filter(item => item.invoicePaymentKey === key);
+                const totalCents = group.items.reduce(
+                    (sum, item) => sum + Math.round(getInvoiceInstallmentValue(item) * 100),
+                    0
+                );
+                const payTo = group.items.find(item => item.payTo)?.payTo || '';
+                const description = `${group.invoice === 'Celular' ? 'Celular' : 'Fatura'} ${group.month}`;
+                const existingExpense = matchingExpenses[0];
+                if (existingExpense) {
+                    existingExpense.desc = description;
+                    existingExpense.value = (totalCents / 100).toFixed(2);
+                    existingExpense.bank = group.invoice;
+                    existingExpense.payTo = payTo;
+                    existingExpense.type = 'Saída';
+                    existingExpense.paid = true;
+                    state.expenses = state.expenses.filter(item => (
+                        item.invoicePaymentKey !== key || item.id === existingExpense.id
+                    ));
+                    return;
+                }
+
+                const today = new Date();
+                const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                state.expenses.push({
+                    id: generateId(),
+                    date,
+                    desc: description,
+                    value: (totalCents / 100).toFixed(2),
+                    bank: group.invoice,
+                    payTo,
+                    type: 'Saída',
+                    paid: true,
+                    invoicePaymentKey: key
+                });
+            });
+        }
+
         function updateVisibleInvoicesPaid(paid) {
             const selectedMonth = document.getElementById('invoice-month-filter').value;
             state.invoices
@@ -2076,6 +2198,7 @@
                 .forEach(item => {
                     item.paid = paid;
                 });
+            reconcileInvoicePaymentExpenses();
             saveState();
         }
 
@@ -2085,6 +2208,7 @@
                 throw new Error(`Compra da fatura não encontrada: ${id}`);
             }
             invoice.paid = paid;
+            reconcileInvoicePaymentExpenses();
             saveState();
         }
 
@@ -2167,7 +2291,9 @@
                 updateInvoiceStoreVisibility(
                     event.currentTarget.value,
                     document.getElementById('wishlist-credit-store-field'),
-                    document.getElementById('wishlist-credit-store')
+                    document.getElementById('wishlist-credit-store'),
+                    document.getElementById('wishlist-credit-pay-to-field'),
+                    document.getElementById('wishlist-credit-pay-to')
                 );
             });
             document.getElementById('invoice-select-all-paid').addEventListener('change', (event) => {
@@ -2224,6 +2350,7 @@
                         installments,
                         invoice,
                         store: document.getElementById('wishlist-credit-store').value.trim(),
+                        payTo: document.getElementById('wishlist-credit-pay-to').value,
                         invoiceMonth
                     }));
                 } else {
@@ -2409,10 +2536,12 @@
                     installments: document.getElementById('f-parcelas').value,
                     invoice: fatura.value,
                     store: document.getElementById('f-loja').value.trim(),
+                    payTo: document.getElementById('f-pagar').value,
                     invoiceMonth: document.getElementById('f-mes-fatura').value
                 }));
                 document.getElementById('invoice-month-dialog').close();
                 document.getElementById('form-fatura').reset();
+                updateInvoiceFormFields('');
                 saveState();
             });
 
@@ -2453,6 +2582,17 @@
             });
 
             updateProfileOnlyTabs();
+            const invoicesBeforeNormalization = JSON.stringify(state.invoices);
+            const expensesBeforeInvoiceSync = JSON.stringify(state.expenses);
+            normalizeInvoiceInstallmentMonths();
+            reconcileInvoicePaymentExpenses();
+            if (
+                JSON.stringify(state.invoices) !== invoicesBeforeNormalization
+                || JSON.stringify(state.expenses) !== expensesBeforeInvoiceSync
+            ) {
+                state.profiles[state.profile] = getActiveProfileData();
+                localStorage.setItem('controleFinanceiroScrapbook', JSON.stringify(state));
+            }
             renderAll();
         };
     </script>
