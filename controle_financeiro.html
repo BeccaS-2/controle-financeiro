@@ -934,11 +934,6 @@
                     <label class="w-24 font-bebas text-xl leading-tight">PAGAR PARA:</label>
                     <select id="g-pagar" class="input-pastel">
                         <option value=""> </option>
-                        <option value="edysampa42@gmail.com">edysampa42@gmail.com</option>
-                        <option value="casanossafe@gmail.com">casanossafe@gmail.com</option>
-                        <option value="millymoraes02@gmail.com">millymoraes02@gmail.com</option>
-                        <option value="11949196756">Cabeleleira = 11949196756</option>
-                        <option value="52227219000121">Manicure = 52227219000121</option>
                     </select>
                 </div>
                 <div class="lg:col-span-3 flex justify-end -mt-2">
@@ -1007,11 +1002,6 @@
                     <label for="f-pagar" class="w-24 font-bebas text-xl leading-tight">ENVIAR PARA:</label>
                     <select id="f-pagar" class="input-pastel" disabled>
                         <option value=""> </option>
-                        <option value="edysampa42@gmail.com">edysampa42@gmail.com</option>
-                        <option value="casanossafe@gmail.com">casanossafe@gmail.com</option>
-                        <option value="millymoraes02@gmail.com">millymoraes02@gmail.com</option>
-                        <option value="11949196756">Cabeleleira = 11949196756</option>
-                        <option value="52227219000121">Manicure = 52227219000121</option>
                     </select>
                 </div>
                       <div class="lg:col-span-3 flex justify-end -mt-2">
@@ -1259,11 +1249,6 @@
                         <label for="wishlist-credit-pay-to" class="w-24 font-bebas text-lg">ENVIAR PARA:</label>
                         <select id="wishlist-credit-pay-to" class="input-pastel" disabled>
                             <option value=""> </option>
-                            <option value="edysampa42@gmail.com">edysampa42@gmail.com</option>
-                            <option value="casanossafe@gmail.com">casanossafe@gmail.com</option>
-                            <option value="millymoraes02@gmail.com">millymoraes02@gmail.com</option>
-                            <option value="11949196756">Cabeleleira = 11949196756</option>
-                            <option value="52227219000121">Manicure = 52227219000121</option>
                         </select>
                     </div>
                 </fieldset>
@@ -1287,6 +1272,7 @@
         let state = {
             profile: 'rebecca',
             profiles: {},
+            payToContacts: [],
             incomes: { 'OUT': 0, 'NOV': 0, 'DEZ': 0 },
             expenses: [], // { id, date, desc, value, category, bank, payTo, type, paid }
             invoices: [], // { id, date, desc, value, installments, invoice, store, paid }
@@ -1408,7 +1394,8 @@
                 state = {
                     ...state,
                     profile: savedProfile,
-                    profiles
+                    profiles,
+                    payToContacts: Array.isArray(savedState.payToContacts) ? savedState.payToContacts : []
                 };
                 loadProfileData(state.profile);
             }
@@ -1524,6 +1511,35 @@
             return state.profile === 'lenira'
                 ? ['Shopee', 'Coin']
                 : ['Itaú', 'Shopee', 'Celular'];
+        }
+
+        function renderPayToOptions(selectedSelectId = '', selectedValue = '') {
+            const contacts = state.payToContacts
+                .filter(contact => typeof contact === 'string' && contact.trim())
+                .map(contact => ({ value: contact, label: contact }));
+
+            ['g-pagar', 'f-pagar', 'wishlist-credit-pay-to'].forEach(id => {
+                const select = document.getElementById(id);
+                const value = id === selectedSelectId ? selectedValue : select.value;
+                select.replaceChildren(new Option(' ', ''));
+                contacts.forEach(contact => select.add(new Option(contact.label, contact.value)));
+                select.add(new Option('＋ Cadastrar contato...', '__add_pay_to_contact__'));
+                select.value = value;
+            });
+        }
+
+        function registerPayToContact(event) {
+            const select = event.currentTarget;
+            if (select.value !== '__add_pay_to_contact__') return;
+
+            const contact = window.prompt('Digite o nome, e-mail ou telefone do contato:')?.trim();
+            if (!contact) {
+                select.value = '';
+                return;
+            }
+            if (!state.payToContacts.includes(contact)) state.payToContacts.push(contact);
+            saveState();
+            renderPayToOptions(select.id, contact);
         }
 
         function renderInvoiceOptions() {
@@ -1817,8 +1833,14 @@
         }
 
         function deleteItem(collection, id) {
+            const deletedInvoice = collection === 'invoices'
+                ? state.invoices.find(item => item.id === id)
+                : null;
             state[collection] = state[collection].filter(item => item.id !== id);
-            if (collection === 'invoices') reconcileInvoicePaymentExpenses();
+            if (collection === 'invoices') {
+                if (deletedInvoice?.invoice === 'Celular') activeInvoiceFilter = 'all';
+                reconcileInvoicePaymentExpenses();
+            }
             saveState();
         }
 
@@ -2319,6 +2341,10 @@
             renderExpenseBankOptions();
             renderInvoiceOptions();
             renderEconomyBanks();
+            renderPayToOptions();
+            ['g-pagar', 'f-pagar', 'wishlist-credit-pay-to'].forEach(id => {
+                document.getElementById(id).addEventListener('change', registerPayToContact);
+            });
             setDefaultInvoiceMonthFilter();
             document.getElementById('expense-month-filter').addEventListener('change', renderExpenses);
             document.getElementById('invoice-month-filter').addEventListener('change', renderInvoices);
