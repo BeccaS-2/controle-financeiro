@@ -1297,10 +1297,6 @@
         let trackingImageData = '';
         let pendingWishlistPurchaseId = null;
         let activeInvoiceFilter = 'all';
-        let cdiRateCache = null;
-        let cdiRateCacheRange = null;
-        let cdiRateRequest = null;
-        let savingsRenderVersion = 0;
 
         async function compressImage(file) {
             if (!file.type.startsWith('image/')) throw new Error('Arquivo não é uma imagem.');
@@ -1428,75 +1424,6 @@
         }
 
         // --- Helpers de Formatação ---
-        function getLocalDateISO() {
-            const today = new Date();
-            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        }
-
-        function formatDateForBCB(dateISO) {
-            const [year, month, day] = dateISO.split('-');
-            return `${day}/${month}/${year}`;
-        }
-
-        async function fetchCdiDailyRates(startDate, endDate) {
-            const url = new URL('https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados');
-            url.search = new URLSearchParams({
-                formato: 'json',
-                dataInicial: formatDateForBCB(startDate),
-                dataFinal: formatDateForBCB(endDate)
-            });
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Falha ao consultar o CDI no Banco Central: HTTP ${response.status}`);
-            }
-
-            const entries = await response.json();
-            if (!Array.isArray(entries)) {
-                throw new Error('Resposta inválida da série diária do CDI.');
-            }
-
-            const rates = new Map();
-            entries.forEach(entry => {
-                const match = /^([0-9]{2})\/([0-9]{2})\/([0-9]{4})$/.exec(entry.data);
-                const rate = Number(entry.valor);
-                if (!match || !Number.isFinite(rate) || rate < 0) {
-                    throw new Error('A série diária do CDI contém um registro inválido.');
-                }
-                const [, day, month, year] = match;
-                rates.set(`${year}-${month}-${day}`, rate);
-            });
-            return rates;
-        }
-
-        async function getCdiDailyRates(startDate, endDate) {
-            while (true) {
-                if (
-                    cdiRateCache
-                    && cdiRateCacheRange
-                    && cdiRateCacheRange.startDate <= startDate
-                    && cdiRateCacheRange.endDate >= endDate
-                ) {
-                    return cdiRateCache;
-                }
-
-                if (cdiRateRequest) {
-                    await cdiRateRequest;
-                    continue;
-                }
-
-                const request = fetchCdiDailyRates(startDate, endDate);
-                cdiRateRequest = request;
-                try {
-                    const rates = await request;
-                    cdiRateCache = rates;
-                    cdiRateCacheRange = { startDate, endDate };
-                    return rates;
-                } finally {
-                    if (cdiRateRequest === request) cdiRateRequest = null;
-                }
-            }
-        }
-
         function formatCurrency(val) {
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
         }
@@ -2162,10 +2089,7 @@
         function renderAll() {
             renderExpenses();
             renderInvoices();
-            renderSavings().catch(error => {
-                console.error('Não foi possível calcular o saldo atualizado das economias.', error);
-                alert('Não foi possível atualizar o saldo das economias pelo CDI. Verifique sua conexão e tente novamente.');
-            });
+            renderSavings();
             renderWishlist();
             renderTracking();
             calculateAndRenderDashboard(); 
@@ -2627,67 +2551,23 @@
             saveState();
         }
 
-        async function renderSavings() {
-            const renderVersion = ++savingsRenderVersion;
-            const savings = state.savings.map(item => ({ ...item }));
+        function renderSavings() {
             const banks = getEconomyBanks();
-            const balances = new Map();
+            const totals = { total: 0 };
             banks.forEach(bank => {
-                balances.set(bank.name, 0);
+                totals[bank.name] = 0;
             });
 
-            const transactionsByDate = new Map();
-            savings.forEach(item => {
-                const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(item.date));
-                if (!match) {
-                    throw new Error(`Data inválida em um lançamento de economia: ${item.id}`);
-                }
-                const [, year, month, day] = match;
-                const transactionDate = new Date(Number(year), Number(month) - 1, Number(day));
-                if (
-                    transactionDate.getFullYear() !== Number(year)
-                    || transactionDate.getMonth() !== Number(month) - 1
-                    || transactionDate.getDate() !== Number(day)
-                ) {
-                    throw new Error(`Data inválida em um lançamento de economia: ${item.id}`);
-                }
-
-                const value = Number(item.value);
-                if (!Number.isFinite(value)) {
-                    throw new Error(`Valor inválido em um lançamento de economia: ${item.id}`);
-                }
-
-                if (!transactionsByDate.has(item.date)) transactionsByDate.set(item.date, []);
-                transactionsByDate.get(item.date).push({ bank: item.bank, value });
+            state.savings.forEach(item => {
+                const val = parseFloat(item.value);
+                if (totals[item.bank] !== undefined) totals[item.bank] += val;
+                totals.total += val;
             });
 
-            let cdiRates = new Map();
-            const transactionDates = [...transactionsByDate.keys()].sort();
-            const today = getLocalDateISO();
-            if (transactionDates.length && transactionDates[0] < today) {
-                cdiRates = await getCdiDailyRates(transactionDates[0], today);
-            }
-            if (renderVersion !== savingsRenderVersion) return;
-
-            const timelineDates = [...new Set([...transactionDates, ...cdiRates.keys()])].sort();
-            timelineDates.forEach(date => {
-                const dailyCdiRate = cdiRates.get(date);
-                if (dailyCdiRate !== undefined) {
-                    balances.forEach((balance, bank) => {
-                        if (balance > 0) balances.set(bank, balance * (1 + dailyCdiRate / 100));
-                    });
-                }
-
-                (transactionsByDate.get(date) || []).forEach(({ bank, value }) => {
-                    balances.set(bank, (balances.get(bank) || 0) + value);
-                });
-            });
-
-            const total = [...balances.values()].reduce((sum, balance) => sum + balance, 0);
-            document.getElementById('eco-total').innerText = formatCurrency(total);
+            document.getElementById('eco-total').innerText = formatCurrency(totals.total);
             banks.forEach(bank => {
                 const bankTotal = document.getElementById(`eco-${bank.name.toLowerCase().replace(/\s+/g, '-')}`);
-                bankTotal.innerText = formatCurrency(balances.get(bank.name) || 0);
+                bankTotal.innerText = formatCurrency(totals[bank.name]);
             });
         }
 
