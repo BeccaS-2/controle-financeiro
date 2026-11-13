@@ -2898,10 +2898,120 @@
                 animation: none;
             }
         }
+        body.is-vault-locked > .sidebar,
+        body.is-vault-locked > main {
+            visibility: hidden;
+        }
+        .vault-gate {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: grid;
+            place-items: center;
+            padding: 1.25rem;
+            background: rgba(43, 8, 22, 0.72);
+            backdrop-filter: blur(8px);
+        }
+        .vault-gate[hidden] { display: none; }
+        .vault-card {
+            width: min(100%, 440px);
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+            border: 4px solid #e49aae;
+            border-radius: 28px;
+            background: #fff8f8;
+            color: #3b0b1c;
+            box-shadow: 0 18px 55px rgba(0, 0, 0, 0.28);
+            font-family: 'Poppins', sans-serif;
+        }
+        .vault-card h1 {
+            margin: 0 0 0.75rem;
+            color: #3b0b1c;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+        .vault-card p {
+            margin: 0 0 1.25rem;
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+        .vault-card label {
+            display: block;
+            margin: 0.9rem 0 0.35rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+        .vault-card input {
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 44px;
+            padding: 0.6rem 0.8rem;
+            border: 2px solid #bd5474;
+            border-radius: 12px;
+            background: #fff;
+            color: #2b0816;
+            font: inherit;
+        }
+        .vault-card input:focus-visible {
+            outline: 3px solid #e49aae;
+            outline-offset: 2px;
+        }
+        .vault-card button {
+            width: 100%;
+            min-height: 46px;
+            margin-top: 1.2rem;
+            border: 0;
+            border-radius: 999px;
+            background: #3b0b1c;
+            color: #fff4f6;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 160ms ease, filter 160ms ease;
+        }
+        .vault-card button:hover { filter: brightness(1.18); transform: translateY(-1px); }
+        .vault-card button:disabled { cursor: wait; opacity: 0.7; }
+        #vault-error {
+            margin-top: 0.85rem;
+            color: #9c183b;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        #vault-save-error {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 200;
+            max-width: min(28rem, calc(100vw - 2rem));
+            padding: 0.8rem 1rem;
+            border: 2px solid #fff4f6;
+            border-radius: 12px;
+            background: #3b0b1c;
+            color: #fff4f6;
+            font: 700 0.85rem/1.45 'Poppins', sans-serif;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
+        }
+        #vault-save-error[hidden] { display: none; }
+        @media (prefers-reduced-motion: reduce) {
+            .vault-card button { transition-duration: 0.01ms; }
+        }
     </style>
 </head>
-<body class="flex flex-col md:flex-row min-h-screen">
-
+<body class="flex flex-col md:flex-row min-h-screen is-vault-locked">
+    <div id="vault-gate" class="vault-gate">
+        <form id="vault-form" class="vault-card" aria-labelledby="vault-title">
+            <h1 id="vault-title">Proteja seus dados</h1>
+            <p id="vault-description"></p>
+            <label for="vault-password">Senha de criptografia</label>
+            <input id="vault-password" type="password" autocomplete="current-password" minlength="6" required>
+            <div id="vault-confirm-field">
+                <label for="vault-confirm-password">Confirme a senha</label>
+                <input id="vault-confirm-password" type="password" autocomplete="new-password" minlength="6" required>
+            </div>
+            <button id="vault-submit" type="submit">Desbloquear dados</button>
+            <p id="vault-error" role="alert" hidden></p>
+        </form>
+    </div>
+    <div id="vault-save-error" role="alert" hidden></div>
     <nav class="sidebar">
         <div class="tab tab-1 active" data-target="tab-visao" title="Visão Mensal"></div>
         <div class="tab tab-2" data-target="tab-gastos" title="Controle de Gastos"></div>
@@ -3401,6 +3511,13 @@
         let trackingImageData = '';
         let pendingWishlistPurchaseId = null;
         let activeInvoiceFilter = 'all';
+        const VAULT_STORAGE_KEY = 'controleFinanceiroEncryptedVault';
+        const LEGACY_STORAGE_KEY = 'controleFinanceiroScrapbook';
+        const VAULT_KDF_ITERATIONS = 600000;
+        const VAULT_ADDITIONAL_DATA = new TextEncoder().encode('controle-financeiro-vault-v1');
+        let vaultCryptoKey = null;
+        let vaultSalt = null;
+        let vaultWriteQueue = Promise.resolve();
 
         async function compressImage(file) {
             if (!file.type.startsWith('image/')) throw new Error('Arquivo não é uma imagem.');
@@ -3536,8 +3653,159 @@
             state.tracking = Array.isArray(profileData.tracking) ? profileData.tracking : [];
         }
 
-        function loadState() {
-            const saved = localStorage.getItem('controleFinanceiroScrapbook');
+        function encodeBase64(bytes) {
+            let binary = '';
+            for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+                binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+            }
+            return btoa(binary);
+        }
+
+        function decodeBase64(value) {
+            return Uint8Array.from(atob(value), character => character.charCodeAt(0));
+        }
+
+        async function deriveVaultKey(password, salt) {
+            const passwordKey = await crypto.subtle.importKey(
+                'raw',
+                new TextEncoder().encode(password),
+                'PBKDF2',
+                false,
+                ['deriveKey']
+            );
+            return crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: VAULT_KDF_ITERATIONS, hash: 'SHA-256' },
+                passwordKey,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt', 'decrypt']
+            );
+        }
+
+        async function encryptVault(plaintext) {
+            if (!vaultCryptoKey) throw new Error('O cofre está bloqueado. Desbloqueie-o novamente antes de salvar.');
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const ciphertext = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv, additionalData: VAULT_ADDITIONAL_DATA },
+                vaultCryptoKey,
+                new TextEncoder().encode(plaintext)
+            );
+            return JSON.stringify({
+                version: 1,
+                kdf: 'PBKDF2-SHA-256',
+                iterations: VAULT_KDF_ITERATIONS,
+                salt: encodeBase64(vaultSalt),
+                iv: encodeBase64(iv),
+                ciphertext: encodeBase64(new Uint8Array(ciphertext))
+            });
+        }
+
+        async function decryptVault(envelope, password) {
+            if (
+                envelope.version !== 1
+                || envelope.kdf !== 'PBKDF2-SHA-256'
+                || envelope.iterations !== VAULT_KDF_ITERATIONS
+            ) {
+                throw new Error('Formato do cofre não reconhecido. Os dados não foram alterados.');
+            }
+            const salt = decodeBase64(envelope.salt);
+            const iv = decodeBase64(envelope.iv);
+            vaultSalt = salt;
+            vaultCryptoKey = await deriveVaultKey(password, salt);
+            const plaintext = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv, additionalData: VAULT_ADDITIONAL_DATA },
+                vaultCryptoKey,
+                decodeBase64(envelope.ciphertext)
+            );
+            return new TextDecoder().decode(plaintext);
+        }
+
+        async function requestVaultAccess() {
+            if (!window.crypto || !window.crypto.subtle) {
+                throw new Error('A criptografia segura não está disponível neste navegador. Abra o projeto em um navegador atualizado.');
+            }
+
+            const encryptedValue = localStorage.getItem(VAULT_STORAGE_KEY);
+            const legacyValue = localStorage.getItem(LEGACY_STORAGE_KEY);
+            const isFirstAccess = encryptedValue === null;
+            const form = document.getElementById('vault-form');
+            const passwordInput = document.getElementById('vault-password');
+            const confirmInput = document.getElementById('vault-confirm-password');
+            const confirmField = document.getElementById('vault-confirm-field');
+            const errorElement = document.getElementById('vault-error');
+            const submitButton = document.getElementById('vault-submit');
+
+            document.getElementById('vault-title').textContent = isFirstAccess
+                ? 'Crie sua senha de proteção'
+                : 'Desbloqueie seus dados';
+            document.getElementById('vault-description').textContent = isFirstAccess
+                ? legacyValue
+                    ? 'Seus dados atuais serão criptografados neste navegador. Crie uma senha única com pelo menos 6 caracteres; ela não será salva nem enviada.'
+                    : 'Seus dados serão criptografados neste navegador. Crie uma senha única com pelo menos 6 caracteres; ela não será salva nem enviada.'
+                : 'Digite sua senha para descriptografar os dados locais. A senha nunca é salva nem enviada.';
+            document.getElementById('vault-password').autocomplete = isFirstAccess ? 'new-password' : 'current-password';
+            confirmField.hidden = !isFirstAccess;
+            confirmInput.required = isFirstAccess;
+            submitButton.textContent = isFirstAccess ? 'Criar cofre e continuar' : 'Desbloquear dados';
+
+            return new Promise(resolve => {
+                form.addEventListener('submit', async event => {
+                    event.preventDefault();
+                    errorElement.hidden = true;
+                    submitButton.disabled = true;
+                    submitButton.textContent = isFirstAccess ? 'Criptografando…' : 'Desbloqueando…';
+
+                    try {
+                        const password = passwordInput.value;
+                        let plaintext;
+                        if (isFirstAccess) {
+                            if (password.length < 6) {
+                                throw new Error('Use uma senha com pelo menos 6 caracteres.');
+                            }
+                            if (password !== confirmInput.value) {
+                                throw new Error('As senhas não coincidem.');
+                            }
+
+                            plaintext = legacyValue === null ? JSON.stringify(state) : legacyValue;
+                            const parsed = JSON.parse(plaintext);
+                            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                                throw new Error('Os dados existentes não têm um formato válido. Eles foram mantidos sem alteração.');
+                            }
+
+                            const salt = crypto.getRandomValues(new Uint8Array(16));
+                            vaultSalt = salt;
+                            vaultCryptoKey = await deriveVaultKey(password, salt);
+                            localStorage.setItem(VAULT_STORAGE_KEY, await encryptVault(plaintext));
+                        } else {
+                            plaintext = await decryptVault(JSON.parse(encryptedValue), password);
+                            const parsed = JSON.parse(plaintext);
+                            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                                throw new Error('O conteúdo do cofre não tem um formato válido. Os dados não foram alterados.');
+                            }
+                        }
+
+                        if (legacyValue !== null) localStorage.removeItem(LEGACY_STORAGE_KEY);
+                        passwordInput.value = '';
+                        confirmInput.value = '';
+                        resolve(plaintext);
+                    } catch (error) {
+                        vaultCryptoKey = null;
+                        vaultSalt = null;
+                        console.error('Não foi possível abrir o cofre local:', error);
+                        errorElement.textContent = error.name === 'OperationError'
+                            ? 'Senha incorreta ou dados criptografados inválidos. Os dados não foram alterados.'
+                            : error.message || 'Não foi possível proteger os dados neste navegador.';
+                        errorElement.hidden = false;
+                        submitButton.disabled = false;
+                        submitButton.textContent = isFirstAccess ? 'Criar cofre e continuar' : 'Desbloquear dados';
+                    }
+                });
+
+                window.requestAnimationFrame(() => passwordInput.focus());
+            });
+        }
+
+        function loadState(saved) {
             if (saved) {
                 const savedState = JSON.parse(saved);
                 const legacyProfileData = {
@@ -3577,8 +3845,22 @@
         
         function saveState() {
             state.profiles.rebecca = getActiveProfileData();
-            localStorage.setItem('controleFinanceiroScrapbook', JSON.stringify(state));
+            const snapshot = JSON.stringify(state);
+            vaultWriteQueue = vaultWriteQueue
+                .then(async () => {
+                    localStorage.setItem(VAULT_STORAGE_KEY, await encryptVault(snapshot));
+                    const errorElement = document.getElementById('vault-save-error');
+                    errorElement.hidden = true;
+                    errorElement.textContent = '';
+                })
+                .catch(error => {
+                    console.error('Não foi possível criptografar e salvar os dados:', error);
+                    const errorElement = document.getElementById('vault-save-error');
+                    errorElement.textContent = 'Não foi possível salvar seus dados criptografados. Libere espaço no navegador e tente novamente.';
+                    errorElement.hidden = false;
+                });
             renderAll();
+            return vaultWriteQueue;
         }
 
         // --- Helpers de Formatação ---
@@ -4931,8 +5213,20 @@
         }
 
         // --- Configuração de Abas e Formulários ---
-        window.onload = () => {
-            loadState();
+        window.onload = async () => {
+            let savedState;
+            try {
+                savedState = await requestVaultAccess();
+                loadState(savedState);
+                document.body.classList.remove('is-vault-locked');
+                document.getElementById('vault-gate').hidden = true;
+            } catch (error) {
+                console.error('Não foi possível iniciar o cofre local:', error);
+                const errorElement = document.getElementById('vault-error');
+                errorElement.textContent = error.message || 'Não foi possível acessar o armazenamento do navegador.';
+                errorElement.hidden = false;
+                return;
+            }
             renderExpenseBankOptions();
             renderInvoiceOptions();
             renderEconomyBanks();
@@ -5288,7 +5582,7 @@
                 || JSON.stringify(state.expenses) !== expensesBeforeInvoiceSync
             ) {
                 state.profiles.rebecca = getActiveProfileData();
-                localStorage.setItem('controleFinanceiroScrapbook', JSON.stringify(state));
+                await saveState();
             }
             processBalanceCarryover();
             window.setInterval(() => {
