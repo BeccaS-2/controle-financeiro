@@ -1818,12 +1818,10 @@
         }
         body.is-2027-view.is-economy-view {
             background-color: #f3cbd0;
-            background-image:
-                linear-gradient(rgba(255, 243, 245, 0.62), rgba(255, 243, 245, 0.62)),
-                url('renda-economias.svg');
-            background-position: center, center;
-            background-repeat: repeat, repeat;
-            background-size: auto, 180px 180px;
+            background-image: url('renda-economias.svg');
+            background-position: center top;
+            background-repeat: repeat;
+            background-size: 180px 180px;
             color: #440d12;
         }
         @media (min-width: 769px) {
@@ -2787,6 +2785,54 @@
                 transform: translateY(-8px);
             }
         }
+        body.is-2027-view {
+            --bordo-2027: #551027;
+            --bordo-2027-dark: #3f0d21;
+            --bordo-2027-mid: #6e1d3c;
+        }
+        body.is-2027-view #dashboard-year-toggle,
+        body.is-2027-view .monthly-board-2027,
+        body.is-2027-view .monthly-board-2027-title {
+            background: var(--bordo-2027);
+        }
+        body.is-2027-view .sidebar .tab-1,
+        body.is-2027-view .sidebar .tab-2 {
+            background-color: var(--bordo-2027);
+        }
+        body.is-2027-view.is-expense-view #form-gasto .tipo-radio input::before {
+            background: var(--bordo-2027);
+        }
+        body.is-2027-view.is-expense-view #tab-gastos .expense-table-panel {
+            border-color: var(--bordo-2027);
+            background: var(--bordo-2027);
+        }
+        body.is-2027-view.is-invoice-view #tab-fatura .tabela-container {
+            background: var(--bordo-2027);
+        }
+        body.is-2027-view.is-invoice-view #tab-fatura .invoice-summary,
+        body.is-2027-view.is-invoice-view #tab-fatura .invoice-table-filter,
+        body.is-2027-view.is-invoice-view #tab-fatura .invoice-select-all {
+            background: var(--bordo-2027);
+        }
+        body.is-2027-view.is-economy-view .economy-camera-screen-2027 {
+            background: repeating-linear-gradient(
+                90deg,
+                var(--bordo-2027) 0,
+                var(--bordo-2027) 8px,
+                #f5b9c5 8px,
+                #f5b9c5 17px
+            );
+        }
+        body.is-2027-view.is-wishlist-view #tab-wishlist .tabela-container,
+        body.is-2027-view.is-tracking-view #tab-rastreio .tabela-container {
+            background: repeating-linear-gradient(
+                90deg,
+                var(--bordo-2027-dark) 0,
+                var(--bordo-2027-dark) 26px,
+                var(--bordo-2027-mid) 26px,
+                var(--bordo-2027-mid) 52px
+            );
+        }
     </style>
 </head>
 <body class="flex flex-col md:flex-row min-h-screen">
@@ -3692,6 +3738,12 @@
             return invoiceDate;
         }
 
+        function isInvoiceForActiveDashboardYear(item) {
+            const installmentDate = getInvoiceInstallmentDate(item);
+            const activeYear = document.body.classList.contains('is-2027-view') ? 2027 : 2026;
+            return installmentDate !== null && installmentDate.getFullYear() === activeYear;
+        }
+
         function parseCurrencyValue(value) {
             const rawValue = String(value).trim().replace(/[^\d,.-]/g, '');
             const normalizedValue = rawValue
@@ -4107,7 +4159,11 @@
 
         function renderTracking() {
             const tbody = document.getElementById('tbody-rastreio');
-            tbody.innerHTML = '<tr><td colspan="4" class="p-0"><div class="linha-listrada"></div></td></tr>';
+            tbody.replaceChildren();
+            if (state.tracking.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-0"><div class="linha-listrada"></div></td></tr>';
+                return;
+            }
 
             state.tracking.forEach(item => {
                 const row = document.createElement('tr');
@@ -4484,13 +4540,9 @@
             cellphoneTbody.replaceChildren();
 
             const selectedMonth = document.getElementById('invoice-month-filter').value;
-            const nextYear = new Date().getFullYear() + 1;
-            const is2027View = document.body.classList.contains('is-2027-view');
             const monthInvoices = state.invoices.filter(item => (
                 item.invoiceMonth === selectedMonth
-                && (is2027View
-                    ? getInvoiceInstallmentDate(item)?.getFullYear() === 2027
-                    : getInvoiceInstallmentDate(item)?.getFullYear() !== nextYear)
+                && isInvoiceForActiveDashboardYear(item)
             ));
             const invoiceNames = [...new Set(monthInvoices.map(item => item.invoice || 'Sem fatura'))];
             const invoiceTotals = document.getElementById('invoice-totals');
@@ -4724,14 +4776,10 @@
 
         function updateVisibleInvoicesPaid(paid) {
             const selectedMonth = document.getElementById('invoice-month-filter').value;
-            const is2027View = document.body.classList.contains('is-2027-view');
-            const nextYear = new Date().getFullYear() + 1;
             state.invoices
                 .filter(item => (
                     item.invoiceMonth === selectedMonth
-                    && (is2027View
-                        ? getInvoiceInstallmentDate(item)?.getFullYear() === 2027
-                        : getInvoiceInstallmentDate(item)?.getFullYear() !== nextYear)
+                    && isInvoiceForActiveDashboardYear(item)
                     && (activeInvoiceFilter === 'all' || (item.invoice || 'Sem fatura') === activeInvoiceFilter)
                 ))
                 .forEach(item => {
