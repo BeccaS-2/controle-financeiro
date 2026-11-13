@@ -331,6 +331,7 @@
             background-color: var(--azul-pastel);
             border-color: var(--azul-escuro);
         }
+        .wishlist-status-select { min-width: 130px; }
         .invoice-select-all {
             position: relative;
             display: inline-flex;
@@ -2222,7 +2223,7 @@
         body.is-2027-view.is-wishlist-view #form-wishlist .wishlist-link-label-legacy { display: none; }
         body.is-2027-view.is-wishlist-view #form-wishlist .wishlist-link-label-2027 { display: inline; }
         body.is-2027-view.is-wishlist-view #form-wishlist #w-cat {
-            flex: 0 0 86px;
+            flex: 0 0 120px;
         }
         body.is-2027-view.is-wishlist-view #form-wishlist .wishlist-dropzone {
             width: 138px;
@@ -3288,7 +3289,7 @@
                     <table class="tabela-scrap">
                         <thead class="font-bebas">
                             <tr>
-                                <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>FATURA</th><th>LOJA</th><th>PAGAR PARA</th><th>AÇÃO</th>
+                                <th class="text-center">COMPRA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>FATURA</th><th>LOJA</th><th>PAGAR PARA</th><th>AÇÃO</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-fatura">
@@ -3300,7 +3301,7 @@
                     <table class="tabela-scrap">
                         <thead class="font-bebas">
                             <tr>
-                                <th class="text-center">DATA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>PAGAR PARA</th><th>AÇÃO</th>
+                                <th class="text-center">COMPRA</th><th>DESCRIÇÃO</th><th>VALOR MENSAL (PARCELA)</th><th>STATUS</th><th class="text-center">PAGO?</th><th>PAGAR PARA</th><th>AÇÃO</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-fatura-celular">
@@ -5004,12 +5005,16 @@
                     : 0;
                 const installmentNumber = Number(item.installmentNumber) || invoiceOffset + 1;
                 const instText = `${installmentNumber} / ${item.installments}`;
+                const invoicePeriod = invoiceDate && item.invoiceMonth
+                    ? `${item.invoiceMonth}/${invoiceDate.getFullYear()}`
+                    : item.invoiceMonth;
+                const invoicePeriodText = invoicePeriod ? ` - fatura ${invoicePeriod}` : '';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = isCellphone ? `
                     <td class="font-bebas text-lg text-center">${formatDateBR(item.date)}</td>
                     <td class="font-bebas text-lg">${item.desc}</td>
-                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}${item.invoiceMonth ? ` - fatura ${item.invoiceMonth}` : ''}</td>
+                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}${invoicePeriodText}</td>
                     <td class="font-bebas text-lg">${instText}</td>
                     <td class="text-center"><input type="checkbox" class="invoice-paid-checkbox" ${item.paid ? 'checked' : ''} aria-label="Marcar compra ${item.desc} como ${item.paid ? 'não paga' : 'paga'}" title="${item.paid ? 'Paga' : 'Não paga'}" onchange="updateInvoicePaid('${item.id}', this.checked)"></td>
                     <td class="font-bebas text-lg">${item.payTo || ''}</td>
@@ -5017,7 +5022,7 @@
                 ` : `
                     <td class="font-bebas text-lg text-center">${formatDateBR(item.date)}</td>
                     <td class="font-bebas text-lg">${item.desc}</td>
-                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}${item.invoiceMonth ? ` - fatura ${item.invoiceMonth}` : ''}</td>
+                    <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(valParcela)}${invoicePeriodText}</td>
                     <td class="font-bebas text-lg">${instText}</td>
                     <td class="text-center"><input type="checkbox" class="invoice-paid-checkbox" ${item.paid ? 'checked' : ''} aria-label="Marcar compra ${item.desc} como ${item.paid ? 'não paga' : 'paga'}" title="${item.paid ? 'Paga' : 'Não paga'}" onchange="updateInvoicePaid('${item.id}', this.checked)"></td>
                     <td>${getBankLogoHTML(item.invoice) || item.invoice}</td>
@@ -5209,8 +5214,12 @@
 
         function renderWishlist() {
             const tbody = document.getElementById('tbody-wishlist');
-            tbody.innerHTML = getStripedRow();
-            
+            tbody.replaceChildren();
+            if (state.wishlist.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-0"><div class="linha-listrada"></div></td></tr>';
+                return;
+            }
+
             state.wishlist.forEach(item => {
                 const isComprado = item.status === 'Comprado';
                 const imgPlaceholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZmlsbD0iIzk5OSI+Rm90bzwvdGV4dD48L3N2Zz4=';
@@ -5227,7 +5236,7 @@
                     <td class="font-gliker text-[var(--texto-marrom)]">${formatCurrency(item.freight || 0)}</td>
                     <td class="font-bebas text-lg">${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-300 underline">Visitar Link</a>` : '-'}</td>
                     <td>
-                        <select onchange="updateWishlistStatus('${item.id}', this.value)" class="input-pastel py-1 px-2 w-auto font-bebas text-lg ${isComprado ? 'wishlist-purchased-status' : ''}">
+                        <select onchange="updateWishlistStatus('${item.id}', this.value)" class="input-pastel py-1 px-2 w-auto font-bebas text-lg wishlist-status-select ${isComprado ? 'wishlist-purchased-status' : ''}">
                             <option value="Planejando" ${!isComprado ? 'selected' : ''}>Planejando</option>
                             <option value="Comprado" ${isComprado ? 'selected' : ''}>Comprado</option>
                         </select>
