@@ -2615,6 +2615,38 @@
             border-bottom: 2px solid #f1bdc5;
             font-size: 0.9rem;
         }
+        #tab-rastreio .tracking-arrival-toggle {
+            display: inline-grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            border: 2px solid #8b294d;
+            border-radius: 50%;
+            background: #fff8f8;
+            color: #8b294d;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            line-height: 1;
+            cursor: pointer;
+            transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
+        }
+        #tab-rastreio .tracking-arrival-toggle:hover { transform: scale(1.08); }
+        #tab-rastreio .tracking-arrival-toggle[aria-pressed="true"] {
+            border-color: #3b0b1c;
+            background: #3b0b1c;
+            color: #fff4f6;
+        }
+        #tab-rastreio .tracking-arrival-toggle:focus-visible {
+            outline: 3px solid #bd5474;
+            outline-offset: 3px;
+        }
+        #tab-rastreio .tabela-scrap tbody tr.is-arrived td {
+            background-color: rgba(228, 154, 174, 0.24);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #tab-rastreio .tracking-arrival-toggle { transition-duration: 0.01ms; }
+        }
         body.is-2027-view.is-tracking-view #tab-rastreio .tabela-scrap tbody tr:nth-child(odd) { background: #fbe4e7; }
         body.is-2027-view.is-tracking-view #tab-rastreio .tabela-scrap tbody tr:nth-child(even) { background: #f7cbd0; }
         body.is-2027-view.is-tracking-view #tab-rastreio .linha-listrada {
@@ -3410,7 +3442,7 @@
                 <table class="tabela-scrap">
                     <thead class="font-bebas">
                         <tr>
-                            <th class="w-32 text-center">-𝜗ৎ-</th><th>ITEM</th><th>LINK</th><th>AÇÃO</th>
+                            <th class="w-32 text-center">-𝜗ৎ-</th><th>ITEM</th><th>LINK</th><th>CHEGOU?</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-rastreio">
@@ -4514,6 +4546,7 @@
 
             state.tracking.forEach(item => {
                 const row = document.createElement('tr');
+                row.classList.toggle('is-arrived', item.arrived === true);
                 const image = document.createElement('img');
                 image.src = item.imgUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="56" height="56"%3E%3Crect width="56" height="56" fill="%23eaf0f3"/%3E%3C/svg%3E';
                 image.alt = item.imgUrl ? 'Imagem do pacote' : '';
@@ -4542,16 +4575,24 @@
                 linkCell.appendChild(link);
 
                 const actionCell = document.createElement('td');
-                const deleteButton = document.createElement('button');
-                deleteButton.type = 'button';
-                deleteButton.className = 'text-[var(--azul-escuro)] font-bebas text-xl hover:scale-110 transition';
-                deleteButton.textContent = 'X';
-                deleteButton.setAttribute('aria-label', `Remover rastreio${item.item ? ` de ${item.item}` : ''}`);
-                deleteButton.addEventListener('click', () => {
-                    state.tracking = state.tracking.filter(tracking => tracking.id !== item.id);
+                const arrivalButton = document.createElement('button');
+                arrivalButton.type = 'button';
+                arrivalButton.className = 'tracking-arrival-toggle';
+                arrivalButton.textContent = '✓';
+                arrivalButton.setAttribute('aria-pressed', String(item.arrived === true));
+                arrivalButton.setAttribute(
+                    'aria-label',
+                    item.arrived === true
+                        ? `Desmarcar chegada${item.item ? ` de ${item.item}` : ''}`
+                        : `Marcar como recebido${item.item ? ` ${item.item}` : ''}`
+                );
+                arrivalButton.title = item.arrived === true ? 'Item recebido' : 'Marcar como recebido';
+                arrivalButton.addEventListener('click', () => {
+                    item.arrived = item.arrived !== true;
                     saveState();
                 });
-                actionCell.appendChild(deleteButton);
+                actionCell.className = 'text-center';
+                actionCell.appendChild(arrivalButton);
 
                 row.append(imageCell, itemCell, linkCell, actionCell);
                 tbody.appendChild(row);
