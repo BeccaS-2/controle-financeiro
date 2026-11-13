@@ -2839,6 +2839,65 @@
                 var(--bordo-2027-mid) 52px
             );
         }
+        body.is-content-view main {
+            align-items: flex-start;
+        }
+        body.is-content-view .tab-content:not(#tab-visao) {
+            width: 100%;
+            align-self: stretch;
+        }
+        body.is-content-view:not(.is-2027-view) #tab-economias {
+            max-width: none;
+            margin: 0;
+        }
+        body.is-content-view:not(.is-2027-view) #tab-economias .economy-heading {
+            width: 100%;
+        }
+        body.is-content-view #tab-economias .economy-heading {
+            justify-content: flex-start;
+            margin-left: 0;
+        }
+        @media (max-width: 768px) {
+            body.is-content-view:not(.is-2027-view) #tab-economias {
+                padding-top: 2rem;
+            }
+        }
+        .tab {
+            transition:
+                width 260ms cubic-bezier(0.2, 0.75, 0.25, 1),
+                transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1),
+                box-shadow 220ms ease;
+        }
+        .btn-action {
+            transition:
+                transform 180ms cubic-bezier(0.2, 0.75, 0.25, 1),
+                box-shadow 180ms ease,
+                background-color 180ms ease,
+                filter 180ms ease;
+        }
+        .input-pastel {
+            transition:
+                border-color 180ms ease,
+                background-color 180ms ease,
+                box-shadow 180ms ease;
+        }
+        .tab-content.is-entering {
+            animation: screenEnter 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+        }
+        @keyframes screenEnter {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .tab,
+            .btn-action,
+            .input-pastel {
+                transition-duration: 0.01ms;
+            }
+            .tab-content.is-entering {
+                animation: none;
+            }
+        }
     </style>
 </head>
 <body class="flex flex-col md:flex-row min-h-screen">
@@ -5074,6 +5133,7 @@
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     const targetId = tab.getAttribute('data-target');
+                    document.body.classList.toggle('is-content-view', targetId !== 'tab-visao');
                     document.body.classList.toggle('is-expense-view', targetId === 'tab-gastos');
                     document.body.classList.toggle('is-invoice-view', targetId === 'tab-fatura');
                     document.body.classList.toggle('is-economy-view', targetId === 'tab-economias');
@@ -5084,8 +5144,9 @@
                         targetId === 'tab-gastos' && document.body.classList.contains('is-2027-view')
                     );
                     contents.forEach(c => {
-                        if(c.id === targetId) c.classList.remove('hide');
-                        else c.classList.add('hide');
+                        const isActive = c.id === targetId;
+                        c.classList.toggle('hide', !isActive);
+                        c.classList.toggle('is-entering', isActive);
                     });
                 });
             });
